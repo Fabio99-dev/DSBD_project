@@ -1,0 +1,24 @@
+version: '3'
+services:
+  database:
+    image: mysql:latest
+    container_name: MyTrafficDB
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: MyTrafficDB
+    ports:
+      - "6033:3306"  
+
+  user_manager:
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    container_name: user_manager
+    depends_on:
+      - database
+    environment:
+      DATABASE_URI: mysql+pymysql://root:toor@MyTrafficDB:3306/MyTrafficDB  # Usa la porta 3307 dell'host
+    ports:
+      - "8080:8080"
+
+
