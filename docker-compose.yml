@@ -17,8 +17,21 @@ services:
     depends_on:
       - database
     environment:
-      DATABASE_URI: mysql+pymysql://root:toor@MyTrafficDB:3306/MyTrafficDB  # Usa la porta 3307 dell'host
+      DATABASE_URI: mysql+pymysql://root:toor@MyTrafficDB:3306/MyTrafficDB  
+    expose:
+      - "3001"
     ports:
-      - "8080:8080"
+      - "3001:3001"
+
+  nginx:
+    image: nginx:alpine
+    container_name: api_gateway_my_traffic
+    volumes:
+      - ./api_gateway.conf:/etc/nginx/conf.d/api_gateway.conf
+    ports:
+      - "8080:80"
+    depends_on:
+      - user_manager
+
 
 

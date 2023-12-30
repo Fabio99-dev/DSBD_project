@@ -2,8 +2,19 @@ from flask import Flask, render_template, request
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 import mysql.connector
-import os
+import os, socket
 import cryptography
+
+def get_host_ip():
+    try:
+        # Ottieni l'hostname della macchina
+        host_name = socket.gethostname()
+        # Ottieni l'indirizzo IP associato all'hostname
+        host_ip = socket.gethostbyname(host_name)
+        return host_ip
+    except Exception as e:
+        print(f"Errore durante il recupero dell'indirizzo IP: {str(e)}")
+        return None
 
 def create_app(config = Config):
 
@@ -68,6 +79,9 @@ def create_app(config = Config):
    #DA FARE: GESTIRE CHE ALLA TERMINAZIONE DEL CONTAINER IL DATABASE FA IL DUMP
    #E INDICARE CHE AL CARICAMENTO DEL CONTAINER CARICA IL DUMP PRECEDENTEMENTE FATTO
    #https://www.youtube.com/watch?v=WBqHr2kPc_A usare questa fonte
+   @app.route("/myip")
+   def myip():
+      return get_host_ip()
 
    @app.route("/test")
    def test():
@@ -75,6 +89,8 @@ def create_app(config = Config):
      u = USERS("Fabio","castiglionefabio80@gmail.com", '123456789')
      db.session.add(instance=u)
      db.session.commit() 
+
+     
 
    return app    
 
