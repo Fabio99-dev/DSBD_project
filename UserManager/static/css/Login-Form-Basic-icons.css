@@ -55,3 +55,14 @@
   border-radius: 50%;
 }
 
+.error{
+
+  color: red;
+  text-decoration: underline;
+}
+
+.success{
+
+  color: green;
+  text-decoration: underline;
+}

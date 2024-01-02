@@ -26,10 +26,18 @@
 								  <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
 								</svg></div>
                             <form class="text-center" method="post">
-                                <div class="mb-3"><input class="form-control" type="text" placeholder="Nome"></div>
+                                <div class="mb-3"><input class="form-control" name="name" type="text" placeholder="Nome"></div>
                                 <div class="mb-3"><input class="form-control" type="email" name="email" placeholder="Email"></div>
                                 <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password"></div>
                                 <div class="mb-3"><button class="btn btn-primary d-block w-100" type="submit">Registrati</button></div>
+                                <p class="text-muted">Già registrato? <a href="http://my.traffic.com:8080/login">Clicca qui</a></p>
+                                {% if data != None and data != False %}
+                                    <p class ="error">{{data}}</p>
+                                {% endif %}
+
+                                {% if data == False %}
+                                    <p class ="success">Registrazione completata! Accedi alla pagina di login</p>
+                                {% endif %}
                             </form>
                         </div>
                     </div>

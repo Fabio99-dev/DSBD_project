@@ -1,11 +1,14 @@
 version: '3'
 services:
   database:
-    image: mysql:latest
+    #image: mysql:latest
     container_name: MyTrafficDB
-    environment:
-      MYSQL_ROOT_PASSWORD: toor
-      MYSQL_DATABASE: MyTrafficDB
+    #environment:
+      #MYSQL_ROOT_PASSWORD: toor
+      #MYSQL_DATABASE: MyTrafficDB
+    build:
+      context: .
+      dockerfile: database.Dockerfile
     ports:
       - "6033:3306"  
 

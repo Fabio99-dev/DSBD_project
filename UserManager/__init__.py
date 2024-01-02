@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 import mysql.connector
 import os, socket
 import cryptography
-
+import re
+import hashlib
 def get_host_ip():
     try:
         # Ottieni l'hostname della macchina
@@ -43,36 +44,74 @@ def create_app(config = Config):
    @app.route("/login", methods=['POST', 'GET'])
    def login():
 
+      data = None
       if(request.method == 'GET'):  
        #  print(os.environ.get('DATABASE_URI'))
-         return render_template("login.html")
+         return render_template("login.html", data=data)
       else:
-         pass 
+         email = request.form["email"]
+         password = request.form["password"] 
+         user = db.session.query(USERS).filter(USERS.email == email)
+         if user.first() != None:
+            if user.first().password == hashlib.sha256(password.encode('utf-8')).hexdigest():
+               #redirect to the new page.
+               return "Ok. Access granted."
+            else:
+               #error message. Password wrong
+               data ="Login fallito. Password errata"
+               return render_template("login.html", data = data)
+         else:
+            #error message. User not found
+            data = "Login fallito. Email non trovata."
+            return render_template("login.html", data = data)
+
     
    @app.route("/register", methods=['POST', 'GET'])
    def register():
+      
+      email_pattern = r"^\S+@\S+\.\S+$"
+      data = None
        
       if(request.method == 'GET'):  
-         return render_template("register.html")
+         return render_template("register.html", data = data)
       else:
-         pass 
+         #se la richiesta è POST recupero i dati dal form e verifico se sono corretti.
+         name = request.form["name"]
+         email = request.form["email"]
+         password = request.form["password"]
 
-   """def test_db():
-       
-       config = {
-          
-        'user': 'root',
-        'password': 'toor',
-        'host': 'api.test.com',
-        'port': '6033',
-        'database': 'MyTrafficDB'
+         if name.isspace() == True or len(name) < 3:
+            data ="Nome non valido. Inserisci almeno tre caratteri"
+            return render_template("register.html", data = data)
+         if re.match(pattern=email_pattern, string=email) == None: 
+            data ="L'indirizzo email non è valido. Riprova"
+            return render_template("register.html", data = data)
+         else:
+            user = db.session.query(USERS).filter(USERS.email == email)
+            if user.first() != None: #usiamo first() perchè la quey ha al massimo un risultato
+               data ="L'email inserita è girà registrata al servizio"
+               return render_template("register.html", data = data)
+            else:
+               pass
 
-       } 
-       connection = mysql.connector.connect(**config)
-       cursor = connection.cursor(dictionary=True)
-       cursor.execute('INSERT INTO USERS(nome,email,password) VALUES("Fabio","castiglionefabio80@gmail.com", "123456789")')
-       cursor.close()
-       connection.close()"""
+         if len(password) <8:
+            data ="La password inserita è troppo debole. Inserisci almeno 8 caratteri"
+            return render_template("register.html", data = data)
+
+
+         #insert to database, chipering the password
+
+         u = USERS(name, email,hashlib.sha256(password.encode('utf-8')).hexdigest()) 
+         db.session.add(instance=u)      
+         db.session.commit()
+         data = False
+         return render_template("register.html", data = data)
+
+            
+
+            
+            
+
       
 
    #FINALMENTE COSI' FUNZIONA
