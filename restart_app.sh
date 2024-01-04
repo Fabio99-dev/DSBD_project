@@ -11,3 +11,6 @@ docker-compose build
 
 docker-compose up -d
 
+#shows the process actually running 
+
+docker ps --all

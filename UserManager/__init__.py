@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session
+from flask_session import Session
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
 import mysql.connector
 import os, socket
 import cryptography
@@ -24,6 +26,8 @@ def create_app(config = Config):
 
    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+   app.secret_key ="my_secret"
+    #La durata di una sessione viene fissata a 15 minuti
    #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza
    #del database SQL 
 
@@ -40,22 +44,47 @@ def create_app(config = Config):
         self.nome = nome
         self.email = email
         self.password = password
+
+   #Setup della session    
+   """SESSION_COOKIE_NAME = "authorized"
+   PERMANENT_SESSION_LIFETIME = 180 #TEST. Sessione da 3 minuti
+   SESSION_PERMANENT = False
+   Session(app=app)  """ 
+
+   @app.route("/cookieDebug")
+   def cookieDebug():
+      session.pop("username", None)
+      return "Session status: " + str(session["authorized"])
+   
+   @app.route("/logout")
+   def logout():
+      session.pop("authorized", None)
+      return redirect("/login")
       
    @app.route("/login", methods=['POST', 'GET'])
    def login():
-
+      session.permanent = False
       data = None
       if(request.method == 'GET'):  
        #  print(os.environ.get('DATABASE_URI'))
          return render_template("login.html", data=data)
       else:
          email = request.form["email"]
-         password = request.form["password"] 
+         password = request.form["password"]
+         remember = request.form.get("remember")
          user = db.session.query(USERS).filter(USERS.email == email)
          if user.first() != None:
             if user.first().password == hashlib.sha256(password.encode('utf-8')).hexdigest():
                #redirect to the new page.
-               return "Ok. Access granted."
+               if remember == "1":
+                  session["authorized"] = True
+                  session.permanent = True
+               else:
+                  session["authorized"] = True
+                  session.permanent = False
+                  app.permanent_session_lifetime = timedelta(minutes=15)
+            
+               return redirect(location="/privateArea")
             else:
                #error message. Password wrong
                data ="Login fallito. Password errata"
@@ -107,13 +136,6 @@ def create_app(config = Config):
          data = False
          return render_template("register.html", data = data)
 
-            
-
-            
-            
-
-      
-
    #FINALMENTE COSI' FUNZIONA
    #DA FARE: GESTIRE CHE ALLA TERMINAZIONE DEL CONTAINER IL DATABASE FA IL DUMP
    #E INDICARE CHE AL CARICAMENTO DEL CONTAINER CARICA IL DUMP PRECEDENTEMENTE FATTO
@@ -121,6 +143,17 @@ def create_app(config = Config):
    @app.route("/myip")
    def myip():
       return get_host_ip()
+   
+   @app.route("/privateArea")
+   def privateArea():
+      if request.method == "GET":
+         return render_template("privateArea.html")
+      elif request.method == "POST":
+         #save the request
+         pass
+      else:
+         #Method not supported
+         pass
 
    @app.route("/test")
    def test():

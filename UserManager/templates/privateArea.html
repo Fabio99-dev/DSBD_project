@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>MyTraffic</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Login-Form-Basic-icons.css')}}">
+</head>
+
+{% if session["authorized"] != True %}
+
+    <body>
+
+        <h1 style="margin-left: 1em;" class ="display-4">My Traffic</h1>
+
+        <div style="margin-top: 1em; margin-left: 3em;">
+            
+            <p class ="display-6">Accesso negato</p>
+            <p>Effettua il login-in <a href="login">qui</a>.</p>
+        
+        </div>
+
+    </body>
+
+{% else %}
+<body>
+    <nav class="navbar navbar-expand-md py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span class="bs-icon-sm bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon">
+		<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+  <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+</svg>
+		</span><span>MyTraffic</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-2"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-2">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"></li>
+                    <li class="nav-item"></li>
+                    <li class="nav-item"></li>
+                </ul><a class="btn btn-primary ms-md-2" role="button" href="logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row" style="background-color: rgba(170,166,164,0.3);border-radius: 3em;">
+            <div class="col-md-6">
+                <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
+                <form style="display: flex;flex-direction: column;align-items: flex-end;"><label class="form-label form-entry">Partenza<input class="form-control input-element" type="text" placeholder="Partenza"></label><label class="form-label form-entry">Destinazione<input class="form-control input-element" type="text" placeholder="Destinazione"></label><label class="form-label form-entry">Orario di inizio<input class="form-control input-element" type="time"></label><label class="form-label form-entry">Orario di fine<input class="form-control input-element" type="time"></label><label class="form-label form-entry">Durata stimata<input class="form-control input-element" type="text" placeholder="Durata stimata" disabled="true"></label><label class="form-label form-entry">Soglia di notifica(*)<select class="form-select input-element">
+    <optgroup label="Soglia di notifica">
+        <option value="10" selected>10%</option>
+        <option value="25">25%</option>
+        <option value="50">50%</option>
+		<option value="75">75%</option>
+		<option value="100">100%</option>
+		<option value="sup">>100%</option>
+    </optgroup>
+</select></label>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-1"><label class="form-check-label" for="formCheck-1">Notificami gli anticipi(**)</label></div><input class="btn btn-primary" type="submit" value="Aggiungi alert" style="/*margin-top: 0.5 em;*/margin-top: 0.75em;">
+                </form>
+                <p style="margin-top: 15px;">(*) Si verrà notificati quando la durata stimata del percorso è incrementata della percentuale scelta nella fascia oraria scelta.</p>
+				<p style="margin-top: 15px;">(**) Se selezionata, si verrà notificati anche nel caso il percorso prevede una percorrenza minore rispetto alla durata normale.</p>
+            </div>
+            <div class="col">
+                <h1 class="display-6" style="text-align: center;">I tuoi alert</h1>
+            </div>
+            <div class="col-md-6">
+                <div id="myAlerts"></div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+</body>
+
+{% endif %}
+
+</html>

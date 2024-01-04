@@ -1,0 +1,26 @@
+.form-entry {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.input-element {
+  margin-left: 0.5em;
+  /*width: 15em;*/
+  width: 60%;
+}
+
+.error{
+
+  color:red;
+  text-decoration: underline;
+}
+
+.success{
+
+    color:green;
+    text-decoration: underline;
+ 
+}
