@@ -1,18 +1,59 @@
-blinker==1.7.0
-cffi==1.16.0
-click==8.1.7
-cryptography==41.0.7
-Flask==3.0.0
-Flask-SQLAlchemy==3.1.1
-greenlet==3.0.3
-importlib-metadata==7.0.0
-itsdangerous==2.1.2
-Jinja2==3.1.2
-MarkupSafe==2.1.3
-mysql-connector==2.2.9
-pycparser==2.21
-PyMySQL==1.1.0
-SQLAlchemy==2.0.23
-typing_extensions==4.9.0
-Werkzeug==3.0.1
-zipp==3.17.0
+{
+  "authenticationResultCode": "ValidCredentials",
+  "brandLogoUri": "https://dev.virtualearth.net/Branding/logo_powered_by.png",
+  "copyright": "Copyright © 2024 Microsoft and its suppliers. All rights reserved. This API cannot be accessed and the content and any results may not be used, reproduced or transmitted in any manner without express written permission from Microsoft Corporation.",
+  "resourceSets": [
+    {
+      "estimatedTotal": 1,
+      "resources": [
+        {
+          "__type": "Location:http://schemas.microsoft.com/search/local/ws/rest/v1",
+          "bbox": [
+            37.50386036093622,
+            15.085270692643618,
+            37.511585796077576,
+            15.098254961146182
+          ],
+          "name": "Piazza della Repubblica, 95131 Catania Catania, Italy",
+          "point": {
+            "type": "Point",
+            "coordinates": [
+              37.50772308,
+              15.09176283
+            ]
+          },
+          "address": {
+            "addressLine": "Piazza della Repubblica",
+            "adminDistrict": "Sicily",
+            "adminDistrict2": "Catania",
+            "countryRegion": "Italy",
+            "formattedAddress": "Piazza della Repubblica, 95131 Catania Catania, Italy",
+            "locality": "Catania",
+            "postalCode": "95131"
+          },
+          "confidence": "Medium",
+          "entityType": "RoadBlock",
+          "geocodePoints": [
+            {
+              "type": "Point",
+              "coordinates": [
+                37.50772308,
+                15.09176283
+              ],
+              "calculationMethod": "Interpolation",
+              "usageTypes": [
+                "Display"
+              ]
+            }
+          ],
+          "matchCodes": [
+            "Good"
+          ]
+        }
+      ]
+    }
+  ],
+  "statusCode": 200,
+  "statusDescription": "OK",
+  "traceId": "a7e26f23e1614156804a45b69171f59e|DU00003066|0.0.0.1|Ref A: 35DB2B3C7C524D358C639A8FAE3B0C1F Ref B: DB3EDGE2611 Ref C: 2024-01-06T16:43:54Z"
+}

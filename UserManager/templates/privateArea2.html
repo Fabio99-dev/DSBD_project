@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>MyTraffic</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Login-Form-Basic-icons.css')}}">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span class="bs-icon-sm bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon">
+		<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+  <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+</svg></span><span>MyTraffic</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-2"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-2">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#">I miei alert</a></li>
+                    <li class="nav-item"></li>
+                    <li class="nav-item"></li>
+                </ul><a class="btn btn-primary ms-md-2" role="button" href="#">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
+                <form id ="form">
+                    <div id="partenza" style="display: flex;flex-direction: column;justify-content: space-between;">
+                        <p style="text-align: center;font-weight: bold;">Dati partenza</p>
+                        <div style="display: flex;flex-direction: column;justify-content: space-between;height: 6em;">
+                            <div style="display: flex;justify-content: space-between;width: 100%;">
+                                <input name="departureCity" class="form-control" type="text" placeholder="Città" style="margin-right: 0.75em;">
+                                <input name="departureCAP" class="form-control" type="text" placeholder="CAP"></div>
+                                <input name="departureAddress" class="form-control" type="text" placeholder="Indirizzo">
+                        </div>
+                    </div>
+                    <div id="arrivo" style="display: flex;flex-direction: column;justify-content: space-between;">
+                        <p style="text-align: center;font-weight: bold;">Dati arrivo</p>
+                        <div style="display: flex;flex-direction: column;justify-content: space-between;height: 6em;">
+                            <div style="display: flex;justify-content: space-between;width: 100%;">
+                                <input name="arrivalCity" class="form-control" type="text" placeholder="Città" style="margin-right: 0.75em;">
+                                <input name="arrivalCAP" class="form-control" type="text" placeholder="CAP"></div>
+                                <input name="arrivalAddress" class="form-control" type="text" placeholder="Indirizzo">
+                        </div>
+                    </div><label class="form-label form-entry" style="margin-top: 1em;">Orario di partenza
+                        <input name="departTime" class="form-control" type="time"></label>
+                        <label class ="form-label form-entry">Tempo di percorrenza <br> medio<input name="travelTime" class="form-control" type="text" disabled="true"></label>
+                        <label class="form-label form-entry">Durata stimata
+                        <input name="estimatedArrivalTime" class="form-control" type="text" disabled="true"></label>
+                        <label class="form-label form-entry">Soglia di notifica
+                        <input name="notifyThreshold" class="form-control" type="number" placeholder="Soglia di notifica (minuti)"></label><label class="form-label" style="margin-top: 0.5em;display: flex;align-items: center;">
+                        <input name="advances" type="checkbox" style="margin-right: 0.5em;">Notificami gli anticipi (**)</label>
+                    <div style="display: flex;justify-content: end;margin-top: 0.5em;"><input class="btn btn-primary" type="submit" value="Aggiungi alert"></div>
+                </form>
+            </div>
+            <div class="col">
+                <h1 class="display-6" style="text-align: center;color: var(--bs-blue);">Anteprima percorso</h1>
+                <iframe id ="map" allowfullscreen="" frameborder="0" loading="lazy" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBonANlvTZDMhpcdoxhJSUHzZusR_BSf64&amp;q=Italy" width="100%" height="400"></iframe>
+                <p>Le posizioni effettive sono soggette ad imprecisioni</p>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <p>(*) Le notifiche verranno ricevute se la durata stimata del percorso è superiore alla somma del tempo di percorrenza medio piú la soglia</p>
+        <p>(**) Se selezionata, si verrà notificati anche nel caso il percorso prevede una percorrenza minore rispetto alla durata normale.</p>
+    </div>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/privateArea.js')}}"></script>
+</body>
+
+</html>

@@ -147,13 +147,14 @@ def create_app(config = Config):
    @app.route("/privateArea")
    def privateArea():
       if request.method == "GET":
-         return render_template("privateArea.html")
+         return render_template("privateArea2.html")
       elif request.method == "POST":
          #save the request
          pass
       else:
          #Method not supported
          pass
+
 
    @app.route("/test")
    def test():

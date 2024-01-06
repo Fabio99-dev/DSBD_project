@@ -10,7 +10,7 @@ services:
       context: .
       dockerfile: database.Dockerfile
     ports:
-      - "6033:3306"  
+      - "6033:3306"     
 
   user_manager:
     build:
