@@ -3,6 +3,12 @@
 #Firstly shutdown the current instance of the application
 docker-compose down
 
+#Delete EVERYTHING
+docker system prune -a
+
+#confirm the prune
+y
+
 #Then build a new image of the application
 
 docker-compose build

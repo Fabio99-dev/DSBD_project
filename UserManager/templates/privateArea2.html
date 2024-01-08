@@ -10,6 +10,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/Login-Form-Basic-icons.css')}}">
 </head>
 
+
+{%if session["authorized"] != True %}
+
+    <body>
+        <div style="margin-top: 1 em; margin-left: 0.75 em;">
+
+            <h1>Accesso negato!</h1>
+            <p>Effettua il login <a href ="/login">qui</a>.</p>
+        </div>
+    </body>
+
+
+{% else %}
+
 <body>
     <nav class="navbar navbar-expand-md py-3">
         <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span class="bs-icon-sm bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon">
@@ -29,7 +43,7 @@
         <div class="row">
             <div class="col-md-6">
                 <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
-                <form id ="form">
+                <form id ="form" action="/sendData" method="POST">
                     <div id="partenza" style="display: flex;flex-direction: column;justify-content: space-between;">
                         <p style="text-align: center;font-weight: bold;">Dati partenza</p>
                         <div style="display: flex;flex-direction: column;justify-content: space-between;height: 6em;">
@@ -62,6 +76,11 @@
                 <h1 class="display-6" style="text-align: center;color: var(--bs-blue);">Anteprima percorso</h1>
                 <iframe id ="map" allowfullscreen="" frameborder="0" loading="lazy" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBonANlvTZDMhpcdoxhJSUHzZusR_BSf64&amp;q=Italy" width="100%" height="400"></iframe>
                 <p>Le posizioni effettive sono soggette ad imprecisioni</p>
+                {%if session["ack"] == False %}
+                    <p class ="error">Sono presenti dei campi vuoti</p>
+                {% elif session["ack"] == True %}
+                    <p class ="success">Percorso salvato!</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -72,5 +91,7 @@
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
     <script src="{{ url_for('static', filename='bootstrap/js/privateArea.js')}}"></script>
 </body>
+
+{% endif %}
 
 </html>

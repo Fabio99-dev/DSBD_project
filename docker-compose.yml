@@ -10,12 +10,24 @@ services:
       context: .
       dockerfile: database.Dockerfile
     ports:
-      - "6033:3306"     
+      - "6033:3306"
+
+  database2:
+    #image: mysql:latest
+    container_name: RoutesDB
+    #environment:
+      #MYSQL_ROOT_PASSWORD: toor
+      #MYSQL_DATABASE: MyTrafficDB
+    build:
+      context: .
+      dockerfile: database2.Dockerfile
+    ports:
+      - "6034:3307"        
 
   user_manager:
     build:
       context: .
-      dockerfile: app.Dockerfile
+      dockerfile: user_manager.Dockerfile
     container_name: user_manager
     depends_on:
       - database
@@ -25,6 +37,20 @@ services:
       - "3001"
     ports:
       - "3001:3001"
+
+  route_handler:
+    build:
+      context: .
+      dockerfile: route_handler.Dockerfile
+    container_name: route_handler
+    depends_on:
+      - database2
+    environment:
+      DATABASE_URI: mysql+pymysql://root:toor@RoutesDB:3306/RoutesDB  
+    expose:
+      - "3002"
+    ports:
+      - "3002:3002"
 
   nginx:
     image: nginx:alpine
