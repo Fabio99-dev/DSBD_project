@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: database2.Dockerfile
     ports:
-      - "6034:3307"        
+      - "6034:3306"        
 
   user_manager:
     build:

@@ -4,10 +4,7 @@
 docker-compose down
 
 #Delete EVERYTHING
-docker system prune -a
-
-#confirm the prune
-y
+#docker system prune -a
 
 #Then build a new image of the application
 

@@ -7,6 +7,16 @@ import os
 import cryptography
 import re
 import hashlib
+import threading
+from apscheduler.schedulers.background import BackgroundScheduler
+import logging, sys
+
+#Mutex globale per l'accesso al db
+mutex_db = threading.Lock()
+
+#Logger
+#logger = logging.Logger(level=logging.DEBUG, name="Vattela a pesca")
+logging.basicConfig(level=logging.DEBUG)
 
 def checkNullValues(data):
    
@@ -14,10 +24,16 @@ def checkNullValues(data):
       if value == "" and key != "advances":
          return False
       
-      return True  
+      return True
+
+def queryDB(db,app):
+   print("Il thread sta eseguendo.", file=sys.stdout, flush=True)
+   app.logger.debug("Il thread sta eseguendo. By logger")
+   #db.session.query().all()
 
 
 def create_app(config = Config):
+
 
    #Creazione del modulo flask
    app = Flask(__name__)
@@ -29,6 +45,7 @@ def create_app(config = Config):
    #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza
    #del database SQL 
 
+   app.logger.debug("Application started. By logger")
    db = SQLAlchemy(app)
 
    #Si definiscono quindi i modelli delle tabelle che compongo il db
@@ -40,21 +57,44 @@ def create_app(config = Config):
      arrivalCity = db.Column(db.String(300), nullable=False)
      arrivalCAP = db.Column(db.String(10), nullable=False)
      arrivalAddress = db.Column(db.String(500), nullable=False)
-     departTime = db.Column(db.String(200), nullable = False)
-     notifyThreshold = db.Column(db.Integer, nullable = False)
-     advances = db.Column(db.Boolean, nullable = False)      
+     #departTime = db.Column(db.String(200), nullable = False)
+     #notifyThreshold = db.Column(db.Integer, nullable = False)
+     #advances = db.Column(db.Boolean, nullable = False)      
 
-     def __init__(self, departureCity,departureCAP,departureAddress,arrivalCity,arrivalCAP,arrivalAddress,
-                  departTime, notifyThreshold, advances):
+     def __init__(self, departureCity,departureCAP,departureAddress,arrivalCity,arrivalCAP,arrivalAddress):
+                  #departTime, notifyThreshold, advances):
         self.departureCity = departureCity
         self.departureCAP = departureCAP
         self.departureAddress = departureAddress
         self.arrivalCity = arrivalCity
         self.arrivalCAP = arrivalCAP
         self.arrivalAddress = arrivalAddress
+        #self.departTime = departTime
+        #self.notifyThreshold = notifyThreshold
+        #self.advances = advances
+
+   class SUBSCRIPTIONS(db.Model):
+      id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+      route_id = db.Column(db.Integer, nullable = False)
+      user_id = db.Column(db.Integer, nullable = False)
+      departTime = db.Column(db.String(200), nullable=False)
+      notifyThreshold = db.Column(db.Integer, nullable = False)
+      advances = db.Column(db.Boolean, nullable = False)
+
+      def __init__(self, route_id, user_id, departTime, notifyThreshold, advances):
+
+        self.route_id = route_id
+        self.user_id = user_id 
         self.departTime = departTime
         self.notifyThreshold = notifyThreshold
         self.advances = advances
+
+
+
+   #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
+   scheduler = BackgroundScheduler()
+   scheduler.add_job(queryDB, 'interval', seconds= 5, args=[db, app])   
+   scheduler.start()          
 
 
    @app.route("/testMS2")
@@ -77,16 +117,51 @@ def create_app(config = Config):
             "arrivalCAP": request.form.get("arrivalCAP"),
             "arrivalAddress": request.form.get("arrivalAddress"),
             "departTime": request.form.get("departTime"),
-            "notifyThreshold": request.form.get("notifyThreshold"),
-            "advances": request.form.get("advances")
+            "notifyThreshold": request.form.get("notifyThreshold")
          }
+         if request.form.get("advances") == "on":
+            data["advances"] = 1
+         else:
+            data["advances"] = 0
+
          if checkNullValues(data) != True:
             session["ack"] = False
             return redirect("/privateArea")
          else:
             session["ack"] = True
+            with mutex_db:
+               """1. Ricerca del percorso se per caso è già presente nel database.
+                     1a. Se NON È presente bisogna creare l'istanza
+                     1b. Se è presente, recuperare l'id.
+                  2. Creare l'oggetto sottoscrizione passando l'id dell'oggetto creato. """
+               route = db.session.query(ROUTES).filter(ROUTES.departureCity == data["departureCity"] and 
+                                                      ROUTES.departureCAP == data["departureCAP"] and
+                                                      ROUTES.departureAddress == data["departureAddress"] and
+                                                      ROUTES.arrivalCity == data["arrivalCity"] and
+                                                      ROUTES.arrivalCAP == data["arrivalCAP"] and 
+                                                      ROUTES.arrivalAddress == data["arrivalAddress"])
+               if route.first() == None:
+                  r =  ROUTES(data["departureCity"], data["departureCAP"], data["departureAddress"],
+                                 data["arrivalCity"], data["arrivalCAP"],data["arrivalAddress"])
+                  db.session.add(instance=r)
+                  db.session.commit()
+                  route_id = r.id
+                  
 
-            if data["advances"] == "on":
+               else:
+                  route_id = route.first().id
+
+               #Creazione dell'oggetto subscription
+               subscription = SUBSCRIPTIONS(route_id, session["authorized"], data["departTime"],
+                  data["notifyThreshold"], data["advances"])
+
+               #Aggiunta della sottoscrizione al database
+               db.session.add(instance=subscription)
+               db.session.commit()   
+            return redirect("/privateArea")
+   return app
+
+"""if data["advances"] == "on":
                 r =  ROUTES(data["departureCity"], data["departureCAP"], 
                             data["departureAddress"], data["arrivalCity"], data["arrivalCAP"],
                             data["arrivalAddress"], data["departTime"], data["notifyThreshold"],
@@ -96,8 +171,8 @@ def create_app(config = Config):
                             data["departureAddress"], data["arrivalCity"], data["arrivalCAP"],
                             data["arrivalAddress"], data["departTime"], data["notifyThreshold"],
                             False)
+            mutex_db.acquire()   
             db.session.add(instance=r)
             db.session.commit()
-            return redirect("/privateArea") 
-   
-   return app
+            mutex_db.release()
+            return redirect("/privateArea") """

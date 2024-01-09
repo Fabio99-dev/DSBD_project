@@ -11,7 +11,7 @@
 </head>
 
 
-{%if session["authorized"] != True %}
+{%if session["authorized"] == None %}
 
     <body>
         <div style="margin-top: 1 em; margin-left: 0.75 em;">
@@ -35,12 +35,13 @@
                     <li class="nav-item"><a class="nav-link active" href="#">I miei alert</a></li>
                     <li class="nav-item"></li>
                     <li class="nav-item"></li>
-                </ul><a class="btn btn-primary ms-md-2" role="button" href="#">Logout</a>
+                </ul><a class="btn btn-primary ms-md-2" role="button" href="/logout">Logout</a>
             </div>
         </div>
     </nav>
     <div class="container">
         <div class="row">
+            <h4 class ="display-6">Benveuto {{session["name"]}} </h4>
             <div class="col-md-6">
                 <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
                 <form id ="form" action="/sendData" method="POST">
@@ -81,6 +82,8 @@
                 {% elif session["ack"] == True %}
                     <p class ="success">Percorso salvato!</p>
                 {% endif %}
+
+                <p>{{session["thread_debug"]}}</p>
             </div>
         </div>
     </div>

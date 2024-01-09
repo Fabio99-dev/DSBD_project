@@ -3,11 +3,14 @@ from flask_session import Session
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
+from datetime import datetime
 import mysql.connector
 import os, socket
 import cryptography
 import re
 import hashlib
+import logging, sys
+
 def get_host_ip():
     try:
         # Ottieni l'hostname della macchina
@@ -26,12 +29,15 @@ def create_app(config = Config):
 
    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+   app.permanent_session_lifetime = timedelta(seconds=5)
    app.secret_key ="my_secret"
     #La durata di una sessione viene fissata a 15 minuti
    #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza
    #del database SQL 
 
    db = SQLAlchemy(app)
+
+   logging.basicConfig(level=logging.DEBUG)
 
    #Si definiscono quindi i modelli delle tabelle che compongo il db
    class USERS(db.Model):
@@ -58,7 +64,9 @@ def create_app(config = Config):
    
    @app.route("/logout")
    def logout():
-      session.pop("authorized", None)
+      session["authorized"] = None
+      session["ack"] = None
+      session["name"] = None
       return redirect("/login")
       
    @app.route("/login", methods=['POST', 'GET'])
@@ -72,18 +80,23 @@ def create_app(config = Config):
          email = request.form["email"]
          password = request.form["password"]
          remember = request.form.get("remember")
+         logging.debug("Value of " + str(remember))
          user = db.session.query(USERS).filter(USERS.email == email)
          if user.first() != None:
             if user.first().password == hashlib.sha256(password.encode('utf-8')).hexdigest():
                #redirect to the new page.
                if remember == "1":
-                  session["authorized"] = True
-                  session.permanent = True
-               else:
-                  session["authorized"] = True
+                  session["authorized"] = user.first().id
+                  session["name"] = user.first().nome
+                  #session.permanent = True
                   session.permanent = False
-                  app.permanent_session_lifetime = timedelta(minutes=15)
-            
+                 # app.permanent_session_lifetime = timedelta(seconds=5)
+               else:
+                  session["authorized"] = user.first().id
+                  session["name"] = user.first().nome
+                  """session.permanent = False
+                  app.permanent_session_lifetime = timedelta(minutes=15)"""
+                  session.permanent = True
                return redirect(location="/privateArea")
             else:
                #error message. Password wrong
@@ -144,16 +157,15 @@ def create_app(config = Config):
    def myip():
       return get_host_ip()
    
-   @app.route("/privateArea")
+   @app.route("/privateArea", methods =["GET", "POST"])
    def privateArea():
-      if request.method == "GET":
-         return render_template("privateArea2.html")
-      elif request.method == "POST":
-         #save the request
-         pass
-      else:
-         #Method not supported
-         pass
+      if request.method == "POST" or request.method == "GET":
+         if session.get("authorized") != None:
+          return render_template("privateArea2.html")     
+         else:
+            return redirect("login")   
+      return render_template("errorpage.html")
+         
 
 
    @app.route("/test")
