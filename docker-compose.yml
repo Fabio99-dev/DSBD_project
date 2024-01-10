@@ -1,5 +1,33 @@
 version: '3'
 services:
+  zookeeper:
+      restart: always
+      image: docker.io/bitnami/zookeeper:3.8
+      ports:
+        - "22181:2181"
+      volumes:
+        - "zookeeper-volume:/bitnami"
+      environment:
+        - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+      restart: always
+      image: docker.io/bitnami/kafka:3.3
+      ports:
+        - "9093:9092"
+      volumes:
+        - "kafka-volume:/bitnami"
+      environment: 
+        - KAFKA_BROKER_ID=1
+        - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+        - ALLOW_PLAINTEXT_LISTENER=yes
+        - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+        - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+        - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://my.traffic.com:9093
+        - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+        - KAFKA_CREATE_TOPICS="PingRoute:1:1"
+      depends_on:
+        - zookeeper
+
   database:
     #image: mysql:latest
     container_name: MyTrafficDB
@@ -39,18 +67,33 @@ services:
       - "3001:3001"
 
   route_handler:
+    restart:
+        always
     build:
       context: .
       dockerfile: route_handler.Dockerfile
     container_name: route_handler
     depends_on:
       - database2
+      - kafka
     environment:
       DATABASE_URI: mysql+pymysql://root:toor@RoutesDB:3306/RoutesDB  
     expose:
       - "3002"
     ports:
       - "3002:3002"
+
+  data_analyzer:
+    restart:
+      always
+    build:
+      context: .
+      dockerfile: data_analyzer.Dockerfile
+    container_name: data_analyzer
+    depends_on:
+      - route_handler
+      - kafka
+   
 
   nginx:
     image: nginx:alpine
@@ -61,6 +104,13 @@ services:
       - "8080:80"
     depends_on:
       - user_manager
+      - route_handler
+      - data_analyzer
+
+volumes:
+    kafka-volume:
+    zookeeper-volume:
+
 
 
 

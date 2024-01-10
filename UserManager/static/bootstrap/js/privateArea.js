@@ -114,6 +114,8 @@ function getArrivalCoordinates(json){
 
 function onRoute(json){
 
+    console.log(json)
+
     let val2 = json.resourceSets[0].resources[0].travelDuration;
     val2 = parseInt(val2)
     let val = json.resourceSets[0].resources[0].travelDurationTraffic;

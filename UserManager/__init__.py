@@ -11,6 +11,7 @@ import re
 import hashlib
 import logging, sys
 
+
 def get_host_ip():
     try:
         # Ottieni l'hostname della macchina
@@ -29,7 +30,7 @@ def create_app(config = Config):
 
    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-   app.permanent_session_lifetime = timedelta(seconds=5)
+   app.permanent_session_lifetime = timedelta(minutes=30) 
    app.secret_key ="my_secret"
     #La durata di una sessione viene fissata a 15 minuti
    #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza

@@ -2,14 +2,13 @@ from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
-from datetime import timedelta
 import os
 import cryptography
-import re
-import hashlib
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging, sys
+import kafka
+import socket
 
 #Mutex globale per l'accesso al db
 mutex_db = threading.Lock()
@@ -17,6 +16,33 @@ mutex_db = threading.Lock()
 #Logger
 #logger = logging.Logger(level=logging.DEBUG, name="Vattela a pesca")
 logging.basicConfig(level=logging.DEBUG)
+
+class message:
+   route_id = 0
+   departureCity = ''
+   departureCAP = ''
+   departureAddress = ''
+   arrivalCity = ''
+   arrivalCAP = ''
+   arrivalAddress = ''
+   subscriptionsList = () #Lista di tuple aventi user_id, departTime, notifyThreshold, advances
+   """Obiettivo per il prossimo uservizio. La subscriptionsList contiene il departTime. 
+   Implementare un algoritmo che mi permetta di prendere il depart time una volta sola per fare
+   la query. 
+   A risultato ottenuto bisogna fare la scan della subscription list e vedere quanti con
+   quel depart time hanno violato la soglia. """
+
+   def __init__(self, route_id,departureCity, departureCAP, departureAddress, 
+                arrivalCity, arrivalCAP, arrivalAddress, subscriptionsList):
+      self.route_id = route_id
+      self.departureCity = departureCity
+      self.departureCAP = departureCAP
+      self.departureAddress = departureAddress
+      self.arrivalCity = arrivalCity
+      self.arrivalCAP = arrivalCAP
+      self.arrivalAddress = arrivalAddress
+      self.subscriptionsList = subscriptionsList
+
 
 def checkNullValues(data):
    
@@ -26,14 +52,13 @@ def checkNullValues(data):
       
       return True
 
-def queryDB(db,app):
-   print("Il thread sta eseguendo.", file=sys.stdout, flush=True)
-   app.logger.debug("Il thread sta eseguendo. By logger")
-   #db.session.query().all()
-
-
 def create_app(config = Config):
 
+   #Il route handler è un producer kafka perchè invia messaggi al data_analyzer.
+   producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
+
+   if producer.bootstrap_connected != True:
+      logging.debug("SONO UN COGLIONE PIRLA CHE NON E' IN GRADO DI CONNETTERSI")
 
    #Creazione del modulo flask
    app = Flask(__name__)
@@ -69,17 +94,16 @@ def create_app(config = Config):
         self.arrivalCity = arrivalCity
         self.arrivalCAP = arrivalCAP
         self.arrivalAddress = arrivalAddress
-        #self.departTime = departTime
-        #self.notifyThreshold = notifyThreshold
-        #self.advances = advances
+        
 
    class SUBSCRIPTIONS(db.Model):
       id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-      route_id = db.Column(db.Integer, nullable = False)
+      route_id = db.Column(db.Integer, db.ForeignKey('routes.id'),  nullable = False)
       user_id = db.Column(db.Integer, nullable = False)
       departTime = db.Column(db.String(200), nullable=False)
       notifyThreshold = db.Column(db.Integer, nullable = False)
       advances = db.Column(db.Boolean, nullable = False)
+      
 
       def __init__(self, route_id, user_id, departTime, notifyThreshold, advances):
 
@@ -93,6 +117,36 @@ def create_app(config = Config):
 
    #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
    scheduler = BackgroundScheduler()
+   def queryDB(db,app):
+      print("Il thread sta eseguendo.", file=sys.stdout, flush=True)
+      app.logger.debug("Il thread sta eseguendo. By logger")
+      with app.app_context(), mutex_db:
+         routes = db.session.query(ROUTES).all()
+         for route in routes:
+            subscriptions = db.session.query(SUBSCRIPTIONS).filter(SUBSCRIPTIONS.route_id == route.id).all()
+            msg = message(route.id, route.departureCity, route.departureCAP, 
+                          route.departureAddress, route.arrivalCity, route.arrivalCAP,
+                          route.arrivalAddress, subscriptions)
+            #code to send the kafka message...
+            producer.send("PingRoute", bytes(str(msg),'utf-8'))
+            #-------
+
+            app.logger.debug(msg.arrivalAddress)
+            app.logger.debug(msg.arrivalCity)   
+            app.logger.debug(msg.subscriptionsList)
+            app.logger.debug(str(msg.subscriptionsList.count))
+            for subscription in subscriptions:
+               
+               app.logger.debug(str(subscription.id) + " " + str(subscription.route_id) + " " + str(subscription.departTime))
+               
+            app.logger.debug("----------------------------------")
+
+        
+            
+
+
+
+
    scheduler.add_job(queryDB, 'interval', seconds= 5, args=[db, app])   
    scheduler.start()          
 
