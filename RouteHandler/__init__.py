@@ -42,6 +42,45 @@ class message:
       self.arrivalCAP = arrivalCAP
       self.arrivalAddress = arrivalAddress
       self.subscriptionsList = subscriptionsList
+      
+   def __str__(self):
+
+      return f"message(route_id={self.route_id}, departureCity={self.departureCity}, departureCAP={self.departureCAP}, departureAddress={self.departureAddress}, arrivalCity={self.arrivalCity}, arrivalCAP={self.arrivalCAP}, arrivalAddress={self.arrivalAddress}, subscriptionsList={self.subscriptionsList})"
+   def __repr__(self):
+      return self.__str__()
+   
+   @classmethod
+   def from_str(obj, input_string):
+      parts = input_string.split(", ")
+      route_id = int(parts[0].split("=")[1])
+      departureCity = parts[1].split("=")[1]
+      departureCAP = parts[2].split("=")[1]
+      departureAddress = parts[3].split("=")[1]
+      arrivalCity = parts[4].split("=")[1]
+      arrivalCAP = parts[5].split("=")[1]
+      arrivalAddress = parts[6].split("=")[1]
+      subscriptionList = parts[7].split("=[")
+      subscriptionParts = subscriptionList[1].split(", ") #Ogni entry è una sottoscrizione. 
+      for entry in subscriptionParts:
+         """Subscription ID: 1
+            Route ID: 1
+            User ID: 1
+            Departure Time: 00:09
+            Notify Threshold: 30
+            Advances: False"""
+         newList = []
+         entryParts = entry.split("\n")
+         subscription = {}
+         for entryPart in entryParts:
+            keyValuePair = entryPart.split(": ")
+            subscription[keyValuePair[0]]=keyValuePair[1]
+         newList.append(subscription)
+
+      return message(route_id, departureCity, departureCAP, departureAddress, arrivalCity, arrivalCAP, arrivalAddress, newList)      
+
+
+
+
 
 
 def checkNullValues(data):
@@ -94,6 +133,15 @@ def create_app(config = Config):
         self.arrivalCity = arrivalCity
         self.arrivalCAP = arrivalCAP
         self.arrivalAddress = arrivalAddress
+
+     
+   def __str__(self):
+        return (
+            f"route_id: {self.id}, departureCity: {self.departureCity}, departureCAP: {self.departureCAP}, departureAddress: {self.departureAddress}, arrivalCity: {self.arrivalCity}, arrivalCAP: {self.arrivalCAP}, arrivalAddress: {self.arrivalAddress}\n"
+        )
+   
+   def __repr__(self):
+      return self.__str__()
         
 
    class SUBSCRIPTIONS(db.Model):
@@ -113,6 +161,15 @@ def create_app(config = Config):
         self.notifyThreshold = notifyThreshold
         self.advances = advances
 
+      def __str__(self):
+        return (
+            f"subscription_id: {self.id}. route_id: {self.route_id}. user_id: {self.user_id}. departureTime: {self.departTime}. notifyThreshold: {self.notifyThreshold}. advances: {self.advances}"
+        )
+      
+      def __repr__(self):
+        return self.__str__()
+  
+
 
 
    #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
@@ -127,6 +184,7 @@ def create_app(config = Config):
             msg = message(route.id, route.departureCity, route.departureCAP, 
                           route.departureAddress, route.arrivalCity, route.arrivalCAP,
                           route.arrivalAddress, subscriptions)
+            logging.debug(subscriptions)
             #code to send the kafka message...
             producer.send("PingRoute", bytes(str(msg),'utf-8'))
             #-------
