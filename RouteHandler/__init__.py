@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 import os
 import cryptography
 import threading
@@ -19,67 +20,28 @@ logging.basicConfig(level=logging.DEBUG)
 
 class message:
    route_id = 0
-   departureCity = ''
-   departureCAP = ''
-   departureAddress = ''
-   arrivalCity = ''
-   arrivalCAP = ''
-   arrivalAddress = ''
+   departureLatitude = 0,
+   departureLongitude = 0,
+   arrivalLatitude = 0,
+   arrivalLongitude = 0,
    subscriptionsList = () #Lista di tuple aventi user_id, departTime, notifyThreshold, advances
-   """Obiettivo per il prossimo uservizio. La subscriptionsList contiene il departTime. 
-   Implementare un algoritmo che mi permetta di prendere il depart time una volta sola per fare
-   la query. 
-   A risultato ottenuto bisogna fare la scan della subscription list e vedere quanti con
-   quel depart time hanno violato la soglia. """
+   
 
-   def __init__(self, route_id,departureCity, departureCAP, departureAddress, 
-                arrivalCity, arrivalCAP, arrivalAddress, subscriptionsList):
+   def __init__(self, route_id,departureLatitude, departureLongitude, arrivalLatitude, 
+                arrivalLongitude, subscriptionsList):
       self.route_id = route_id
-      self.departureCity = departureCity
-      self.departureCAP = departureCAP
-      self.departureAddress = departureAddress
-      self.arrivalCity = arrivalCity
-      self.arrivalCAP = arrivalCAP
-      self.arrivalAddress = arrivalAddress
+      self.departureLatitude = departureLatitude
+      self.departureLongitude = departureLongitude
+      self.arrivalLatitude = arrivalLatitude
+      self.arrivalLongitude = arrivalLongitude
       self.subscriptionsList = subscriptionsList
       
    def __str__(self):
 
-      return f"message(route_id={self.route_id}, departureCity={self.departureCity}, departureCAP={self.departureCAP}, departureAddress={self.departureAddress}, arrivalCity={self.arrivalCity}, arrivalCAP={self.arrivalCAP}, arrivalAddress={self.arrivalAddress}, subscriptionsList={self.subscriptionsList})"
+      return f"message(route_id={self.route_id}, departureLatitude={self.departureLatitude}, departureLongitude={self.departureLongitude}, arrivalLatitude={self.arrivalLatitude}, arrivalLongitude={self.arrivalLongitude}, subscriptionsList={self.subscriptionsList})"
    def __repr__(self):
       return self.__str__()
    
-   @classmethod
-   def from_str(obj, input_string):
-      parts = input_string.split(", ")
-      route_id = int(parts[0].split("=")[1])
-      departureCity = parts[1].split("=")[1]
-      departureCAP = parts[2].split("=")[1]
-      departureAddress = parts[3].split("=")[1]
-      arrivalCity = parts[4].split("=")[1]
-      arrivalCAP = parts[5].split("=")[1]
-      arrivalAddress = parts[6].split("=")[1]
-      subscriptionList = parts[7].split("=[")
-      subscriptionParts = subscriptionList[1].split(", ") #Ogni entry è una sottoscrizione. 
-      for entry in subscriptionParts:
-         """Subscription ID: 1
-            Route ID: 1
-            User ID: 1
-            Departure Time: 00:09
-            Notify Threshold: 30
-            Advances: False"""
-         newList = []
-         entryParts = entry.split("\n")
-         subscription = {}
-         for entryPart in entryParts:
-            keyValuePair = entryPart.split(": ")
-            subscription[keyValuePair[0]]=keyValuePair[1]
-         newList.append(subscription)
-
-      return message(route_id, departureCity, departureCAP, departureAddress, arrivalCity, arrivalCAP, arrivalAddress, newList)      
-
-
-
 
 
 
@@ -121,18 +83,22 @@ def create_app(config = Config):
      arrivalCity = db.Column(db.String(300), nullable=False)
      arrivalCAP = db.Column(db.String(10), nullable=False)
      arrivalAddress = db.Column(db.String(500), nullable=False)
-     #departTime = db.Column(db.String(200), nullable = False)
-     #notifyThreshold = db.Column(db.Integer, nullable = False)
-     #advances = db.Column(db.Boolean, nullable = False)      
-
-     def __init__(self, departureCity,departureCAP,departureAddress,arrivalCity,arrivalCAP,arrivalAddress):
-                  #departTime, notifyThreshold, advances):
+     departureLatitude = db.Column(db.Numeric, nullable=False)
+     departureLongitude = db.Column(db.Numeric, nullable=False)
+     arrivalLatitude = db.Column(db.Numeric, nullable=False)
+     arrivalLongitude = db.Column(db.Numeric, nullable=False)
+     def __init__(self, departureCity,departureCAP,departureAddress,arrivalCity,arrivalCAP,arrivalAddress,
+                  departureLatitude, departureLongitude, arrivalLatitude, arrivalLongitude):
         self.departureCity = departureCity
         self.departureCAP = departureCAP
         self.departureAddress = departureAddress
         self.arrivalCity = arrivalCity
         self.arrivalCAP = arrivalCAP
         self.arrivalAddress = arrivalAddress
+        self.departureLatitude = departureLatitude
+        self.departureLongitude = departureLongitude
+        self.arrivalLatitude = arrivalLatitude
+        self.arrivalLongitude = arrivalLongitude
 
      
    def __str__(self):
@@ -181,15 +147,14 @@ def create_app(config = Config):
          routes = db.session.query(ROUTES).all()
          for route in routes:
             subscriptions = db.session.query(SUBSCRIPTIONS).filter(SUBSCRIPTIONS.route_id == route.id).all()
-            msg = message(route.id, route.departureCity, route.departureCAP, 
-                          route.departureAddress, route.arrivalCity, route.arrivalCAP,
-                          route.arrivalAddress, subscriptions)
+            msg = message(route.id, route.departureLatitude, route.departureLongitude,
+                          route.arrivalLatitude, route.arrivalLongitude, subscriptions)
             logging.debug(subscriptions)
             #code to send the kafka message...
             producer.send("PingRoute", bytes(str(msg),'utf-8'))
             #-------
 
-            app.logger.debug(msg.arrivalAddress)
+            """app.logger.debug(msg.arrivalAddress)
             app.logger.debug(msg.arrivalCity)   
             app.logger.debug(msg.subscriptionsList)
             app.logger.debug(str(msg.subscriptionsList.count))
@@ -197,21 +162,16 @@ def create_app(config = Config):
                
                app.logger.debug(str(subscription.id) + " " + str(subscription.route_id) + " " + str(subscription.departTime))
                
-            app.logger.debug("----------------------------------")
+            app.logger.debug("----------------------------------")"""
 
         
             
 
 
 
-
+   #Da tenere staccate finchè non sarà sistemato il database.
    scheduler.add_job(queryDB, 'interval', seconds= 5, args=[db, app])   
    scheduler.start()          
-
-
-   @app.route("/testMS2")
-   def testMS2():
-      return render_template("errorpage.html")
    
 
    @app.route("/sendData", methods = ["POST"])
@@ -229,8 +189,13 @@ def create_app(config = Config):
             "arrivalCAP": request.form.get("arrivalCAP"),
             "arrivalAddress": request.form.get("arrivalAddress"),
             "departTime": request.form.get("departTime"),
-            "notifyThreshold": request.form.get("notifyThreshold")
+            "notifyThreshold": request.form.get("notifyThreshold"),
+            "departureLatitude": request.form.get("departureLatitude"),
+            "departureLongitude": request.form.get("departureLongitude"),
+            "arrivalLatitude": request.form.get("arrivalLatitude"),
+            "arrivalLongitude": request.form.get("arrivalLongitude")
          }
+
          if request.form.get("advances") == "on":
             data["advances"] = 1
          else:
@@ -242,19 +207,20 @@ def create_app(config = Config):
          else:
             session["ack"] = True
             with mutex_db:
-               """1. Ricerca del percorso se per caso è già presente nel database.
-                     1a. Se NON È presente bisogna creare l'istanza
-                     1b. Se è presente, recuperare l'id.
-                  2. Creare l'oggetto sottoscrizione passando l'id dell'oggetto creato. """
-               route = db.session.query(ROUTES).filter(ROUTES.departureCity == data["departureCity"] and 
-                                                      ROUTES.departureCAP == data["departureCAP"] and
-                                                      ROUTES.departureAddress == data["departureAddress"] and
-                                                      ROUTES.arrivalCity == data["arrivalCity"] and
-                                                      ROUTES.arrivalCAP == data["arrivalCAP"] and 
-                                                      ROUTES.arrivalAddress == data["arrivalAddress"])
+               route = db.session.query(ROUTES).filter(
+                           and_(
+                              ROUTES.departureCity == data["departureCity"],
+                              ROUTES.departureCAP == data["departureCAP"],
+                              ROUTES.departureAddress == data["departureAddress"],
+                              ROUTES.arrivalCity == data["arrivalCity"],
+                              ROUTES.arrivalCAP == data["arrivalCAP"],
+                              ROUTES.arrivalAddress == data["arrivalAddress"]
+                           )
+                        )
                if route.first() == None:
                   r =  ROUTES(data["departureCity"], data["departureCAP"], data["departureAddress"],
-                                 data["arrivalCity"], data["arrivalCAP"],data["arrivalAddress"])
+                                 data["arrivalCity"], data["arrivalCAP"],data["arrivalAddress"],data["departureLatitude"],
+                                 data["departureLongitude"], data["arrivalLatitude"], data["arrivalLongitude"])
                   db.session.add(instance=r)
                   db.session.commit()
                   route_id = r.id

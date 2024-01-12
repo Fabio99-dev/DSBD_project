@@ -15,6 +15,11 @@ const departTime = form["departTime"]
 const estimatedArrivalTime = form["estimatedArrivalTime"]
 const travelTime = form["travelTime"]
 
+const startingLatitude = form["startingLatitude"]
+const startingLongitude = form["startingLongitude"]
+const endingLatitude = form["endingLatitude"]
+const endingLongitude = form["endingLongitude"]
+
 
 
 button = document.querySelector("#testButton");
@@ -100,7 +105,10 @@ function getDepartureCoordinates(json){
 
     latitude_departure = json.resourceSets[0].resources[0].geocodePoints[0].coordinates[0]
     longitude_departure = json.resourceSets[0].resources[0].geocodePoints[0].coordinates[1]
-    
+    startingLatitude.value = latitude_departure
+    startingLongitude.value = longitude_departure
+    console.log(startingLatitude.value)
+    console.log(startingLongitude.value)
 
 }
 
@@ -108,7 +116,11 @@ function getArrivalCoordinates(json){
 
 
     latitude_arrival = json.resourceSets[0].resources[0].geocodePoints[0].coordinates[0]
-    longitude_arrival = json.resourceSets[0].resources[0].geocodePoints[0].coordinates[1]  
+    longitude_arrival = json.resourceSets[0].resources[0].geocodePoints[0].coordinates[1]
+    endingLatitude.value = latitude_arrival
+    endingLongitude.value = longitude_arrival  
+    console.log(endingLatitude.value)
+    console.log(endingLongitude.value)
 
 }
 
