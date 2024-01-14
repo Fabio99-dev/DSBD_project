@@ -169,7 +169,7 @@ def create_app(config = Config):
          
 
    #Da tenere staccate finchè non sarà sistemato il database.
-   scheduler.add_job(queryDB, 'interval', seconds= 5, args=[db, app])   
+   scheduler.add_job(queryDB, 'interval', seconds=30, args=[db, app])   
    scheduler.start()
 
    @app.route("/getData/<user_id>", methods = ["GET"])

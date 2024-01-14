@@ -93,8 +93,18 @@ services:
     depends_on:
       - route_handler
       - kafka
-   
 
+  notifier_service:
+    restart:
+      always
+    build:
+      context: .
+      dockerfile: notifier_service.Dockerfile
+    container_name: notifier_service
+    depends_on:
+      - data_analyzer
+      - kafka      
+   
   nginx:
     image: nginx:alpine
     container_name: api_gateway_my_traffic
