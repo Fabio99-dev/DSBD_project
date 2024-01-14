@@ -62,6 +62,8 @@ class Message:
    def __repr__(self):
       return self.__str__()
    
+   """Subscription(subscription_id=2. route_id=2. user_id=2. departureTime='09:00'. notifyThreshold=55. advances='True'"""
+   
    @classmethod
    def from_str(obj, input_string):
       
@@ -143,8 +145,10 @@ def kafka_consumer():
                     decodedMessage = Message.from_str(content)
                     logging.debug(decodedMessage)
                     departureTimes = getDepartureTimes(decodedMessage.subscriptionsList)
-                    thread = threading.Thread(target=handle_route, args=(decodedMessage,departureTimes))
-                    
+                    #thread = threading.Thread(target=handle_route, args=(decodedMessage,departureTimes))
+                    #handle_route(decodedMessage, departureTimes)
+                    #1. Creo il thread.
+                    #2. Mando il thread in esecuzione che elabora quella tratta 
 
 if __name__ == '__main__':
     kafka_consumer()

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import aliased
 from sqlalchemy import and_
 import os
 import cryptography
@@ -10,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import logging, sys
 import kafka
 import socket
+import json
 
 #Mutex globale per l'accesso al db
 mutex_db = threading.Lock()
@@ -141,7 +143,6 @@ def create_app(config = Config):
    #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
    scheduler = BackgroundScheduler()
    def queryDB(db,app):
-      print("Il thread sta eseguendo.", file=sys.stdout, flush=True)
       app.logger.debug("Il thread sta eseguendo. By logger")
       with app.app_context(), mutex_db:
          routes = db.session.query(ROUTES).all()
@@ -164,15 +165,43 @@ def create_app(config = Config):
                
             app.logger.debug("----------------------------------")"""
 
-        
-            
 
-
+         
 
    #Da tenere staccate finchè non sarà sistemato il database.
    scheduler.add_job(queryDB, 'interval', seconds= 5, args=[db, app])   
-   scheduler.start()          
-   
+   scheduler.start()
+
+   @app.route("/getData/<user_id>", methods = ["GET"])
+   def getData(user_id):
+      with mutex_db:
+         route_alias = aliased(ROUTES)
+         subscription_alias = aliased(SUBSCRIPTIONS)
+         query_result = (
+            db.session.query(route_alias, subscription_alias)
+            .join(subscription_alias, route_alias.id == subscription_alias.route_id)
+            .filter(subscription_alias.user_id == user_id)
+            .all()
+         )
+      routes = []        
+      for route, subscription in query_result:
+         entry = {
+
+            "subscription_id": subscription.id,     
+            "departureCity": route.departureCity,
+            "departureCAP": route.departureCAP,
+            "departureAddress": route.departureAddress,
+            "arrivalCity": route.arrivalCity,
+            "arrivalCAP": route.departureCAP,
+            "arrivalAddress": route.departureAddress,
+            "departTime": subscription.departTime,
+            "notifyThreshold": subscription.notifyThreshold,
+            "advances": subscription.advances
+
+         }
+         routes.append(entry)
+
+      return routes     
 
    @app.route("/sendData", methods = ["POST"])
    def sendData():

@@ -32,14 +32,15 @@
 </svg></span><span>MyTraffic</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-2"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navcol-2">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#">I miei alert</a></li>
-                    <li class="nav-item"></li>
+                    <li class="nav-item"><a class="nav-link active" href="/privateArea">Crea Alert</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/myAlerts">I miei alert</a></li>
                     <li class="nav-item"></li>
                 </ul><a class="btn btn-primary ms-md-2" role="button" href="/logout">Logout</a>
             </div>
         </div>
     </nav>
     <div class="container">
+    
         <div class="row">
             <h4 class ="display-6">Benveuto {{session["name"]}} </h4>
             <div class="col-md-6">
@@ -96,7 +97,7 @@
         <p>(**) Se selezionata, si verrà notificati anche nel caso il percorso prevede una percorrenza minore rispetto alla durata normale.</p>
     </div>
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
-    <script src="{{ url_for('static', filename='bootstrap/js/privateArea.js')}}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/privateArea.js')}}" defer></script>
 </body>
 
 {% endif %}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>MyTraffic</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Login-Form-Basic-icons.css')}}">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span class="bs-icon-sm bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+              </svg>
+        </span><span>MyTraffic</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-2"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-2">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="/privateArea">Crea Alert</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/myAlerts">I miei alert</a></li>
+                    <li class="nav-item"></li>
+                </ul><a class="btn btn-primary ms-md-2" role="button" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div id ="myAlerts" class="container">
+        <input id = user_id type="hidden" name ="user_id" value="{{session['authorized']}}">
+        
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/my_alerts.js')}}"></script>
+</body>
+
+</html>

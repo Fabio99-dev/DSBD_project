@@ -166,9 +166,11 @@ def create_app(config = Config):
          else:
             return redirect("login")   
       return render_template("errorpage.html")
-         
-
-
+   
+   @app.route("/myAlerts", methods=["GET"])
+   def myAlerts():
+      return render_template("my_alerts.html")
+   
    @app.route("/test")
    def test():
      # test_db()
