@@ -143,7 +143,7 @@ def create_app(config = Config):
    #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
    scheduler = BackgroundScheduler()
    def queryDB(db,app):
-      app.logger.debug("Il thread sta eseguendo. By logger")
+      logging.debug("########Il thread sta eseguendo. By logger###########")
       with app.app_context(), mutex_db:
          routes = db.session.query(ROUTES).all()
          for route in routes:
@@ -169,7 +169,7 @@ def create_app(config = Config):
          
 
    #Da tenere staccate finchè non sarà sistemato il database.
-   scheduler.add_job(queryDB, 'interval', seconds=30, args=[db, app])   
+   scheduler.add_job(queryDB, 'interval', minutes=1, args=[db, app])   
    scheduler.start()
 
    @app.route("/getData/<user_id>", methods = ["GET"])

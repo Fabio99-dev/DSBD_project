@@ -33,6 +33,6 @@ INSERT INTO RoutesDB.routes (id, departureCity, departureCAP, departureAddress, 
 INSERT INTO RoutesDB.routes (id, departureCity, departureCAP, departureAddress, arrivalCity, arrivalCAP, arrivalAddress, departureLatitude, departureLongitude, arrivalLatitude, arrivalLongitude) VALUES (4, 'San Giuliano Milanese', '20098', 'Via Francesco Baracca 7', 'San Donato Milanese', '20097', 'Via Milano 4', 45.398481, 9.2827215, 45.4331139, 9.2659103);
 INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (1, 1, 2, '12:00', 70, 1);
 INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (2, 2, 2, '09:00', 55, 1);
-INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (3, 1, 1, '12:00', 65, 0);
+INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (3, 1, 1, '10:00', 65, 0);
 INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (4, 3, 2, '09:00', 60, 0);
 INSERT INTO RoutesDB.subscriptions (id, route_id, user_id, departTime, notifyThreshold, advances) VALUES (5, 4, 2, '07:00', 33, 0);

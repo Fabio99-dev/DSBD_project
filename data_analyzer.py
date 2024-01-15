@@ -139,37 +139,39 @@ def handle_route(decodedMessage, departureTimes):
     logging.debug("############# STO ESEGUENDO IL THREAD #############")  
     if response.status_code == 200:
       #Conversione del JSON in object Python
-      data = response.json()
       decoded = json.dumps(response.json())
       object = json.loads(decoded)
       #Il travel time viene restituito in secondi, pertanto viene convertito in minuti
       travelTime = int(object["resourceSets"][0]["resources"][0]["travelDurationTraffic"]/60)
-      logging.debug("TRAVEL TIME: " + str(travelTime)) 
+     # logging.debug("TRAVEL TIME: " + str(travelTime)) 
       standardTime = int(object["resourceSets"][0]["resources"][0]["travelDuration"]/60)
-      logging.debug("STANDARD TIME: " + str(standardTime)) 
+      #logging.debug("STANDARD TIME: " + str(standardTime)) 
       timed_subscribers = get_subscribers_time(decodedMessage.subscriptionsList, time)
       logging.debug("-******************** "  + str(timed_subscribers) + "***************************")
       alerts_to_send = []
-      logging.debug("--------------------------Reading the following message-------------------")  
+      #logging.debug("--------------------------Reading the following message-------------------")  
       for subscribe in timed_subscribers:
-         logging.debug("--------------------------Inside the loop-------------------") 
-         logging.debug("FIRST OPERATION " + str(int(standardTime) + int(subscribe[0])))
+         #logging.debug("--------------------------Inside the loop-------------------") 
+         #logging.debug("FIRST OPERATION " + str(int(standardTime) + int(subscribe[0])))
          if int(standardTime) + int(subscribe[0]) > int(travelTime):
-            logging.debug("######## PASSED THE FIRST CHECK #######")
+            #logging.debug("######## PASSED THE FIRST CHECK #######")
             delta = int(subscribe[0]) - int(travelTime)
-            message = "La tratta da id: " + str(decodedMessage.route_id) + " ha un ritardo di " + str(delta)
+            message = "La tratta da id: " + str(decodedMessage.route_id) + " ha un ritardo di " + str(delta) + " minuti\n"+"Orario di partenza: " + time
             entry = (subscribe[2], message)
             alerts_to_send.append(entry)
-         logging.debug("SECOND OPERATION " + str(int(standardTime) - int(subscribe[0])))
+         #logging.debug("SECOND OPERATION " + str(int(standardTime) - int(subscribe[0])))
          if -(int(standardTime) - int(subscribe[0])) < int(travelTime and subscribe[1] == True):
-            logging.debug("########### PASSED THE SECOND CHECK ###########")
+            #logging.debug("########### PASSED THE SECOND CHECK ###########")
             #Code to send a kafka message
             delta = int(travelTime) - int(subscribe[0]) 
-            message = "La tratta da id: " + str(decodedMessage.route_id) + " ha un anticipo di " + str(delta)
+            message = "La tratta da id: " + str(decodedMessage.route_id) + " ha un anticipo di " + str(delta) + " minuti\n"+"Orario di partenza: " + time
             entry = (subscribe[2], message)
             alerts_to_send.append(entry)
-         #send the kafka message here
-         producer.send("AlertMessage",bytes(message, 'utf-8'))       
+         #logging.debug("############ I'M INSIDE THE LOOP #################")
+      #send the kafka message here
+      logging.debug("#############RESULT###############")       
+      logging.debug("RESULT: " + str(alerts_to_send))       
+      producer.send("AlertMessage",bytes(str(alerts_to_send), 'utf-8'))       
             
            
     else:
@@ -184,18 +186,19 @@ def kafka_consumer():
         consumer.subscribe(['PingRoute'])
 
         while True:
-            logging.debug("-------------------------")
             message = consumer.poll()
             if(message != None):
                 for message in consumer:
+                    #logging.debug("########## Reading the following message ################")
                     content = message.value.decode('utf-8')  
-                    logging.debug("Value: " + content)
+                    #logging.debug("Value: " + content)
                     decodedMessage = Message.from_str(content)
-                    logging.debug(decodedMessage)
+                    #logging.debug(decodedMessage)
                     departureTimes = getDepartureTimes(decodedMessage.subscriptionsList)
-                    
+                    logging.debug("########## departure times ################")
+                    logging.debug(departureTimes) 
                     #with concurrent.futures.ThreadPoolExecutor() as executor:
-                     # executor.submit(handle_route, decodedMessage, departureTimes)
+                     #executor.submit(handle_route, decodedMessage, departureTimes)
                     handle_route(decodedMessage, departureTimes)
 
 if __name__ == '__main__':

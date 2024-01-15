@@ -11,5 +11,5 @@ CREATE TABLE users(
 );
 
 
-INSERT INTO users (nome, email, password) values("Fabio", "cas@gmail.com", "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225");
-INSERT INTO users (nome, email, password) values("Fabio99", "casti@gmail.com", "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225");
+INSERT INTO users (nome, email, password) values("Fabio", "giovannicasch@gmail.com", "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225");
+INSERT INTO users (nome, email, password) values("Fabio99", "fabio.castiglione99@outlook.com", "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225");

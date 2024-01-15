@@ -10,6 +10,7 @@ import cryptography
 import re
 import hashlib
 import logging, sys
+import json
 
 
 def get_host_ip():
@@ -170,6 +171,18 @@ def create_app(config = Config):
    @app.route("/myAlerts", methods=["GET"])
    def myAlerts():
       return render_template("my_alerts.html")
+   
+   @app.route("/getEmail/<user_id>", methods = ["GET"])
+   def getEmail(user_id):
+      user = db.session.query(USERS).filter(USERS.id == user_id)
+      if user.first() != None:
+         return json.dumps({"status": "ok",
+                 "user_id": user_id,
+                 "email": user.first().email})
+      else:
+         return json.dumps({"status": "error",
+                 "user_id": user_id,
+                 "email": "email not found!"})
    
    @app.route("/test")
    def test():
