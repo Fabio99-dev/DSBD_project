@@ -140,11 +140,10 @@ def create_app(config = Config):
 
 
 
-   #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db
-   scheduler = BackgroundScheduler()
-   def queryDB(db,app):
-      logging.debug("########Il thread sta eseguendo. By logger###########")
-      with app.app_context(), mutex_db:
+  # @app.route("/queryDB", methods=["GET"])
+   def queryDB(db, app):
+      
+      with app.app_context(),mutex_db:
          routes = db.session.query(ROUTES).all()
          for route in routes:
             subscriptions = db.session.query(SUBSCRIPTIONS).filter(SUBSCRIPTIONS.route_id == route.id).all()
@@ -153,6 +152,7 @@ def create_app(config = Config):
             logging.debug(subscriptions)
             #code to send the kafka message...
             producer.send("PingRoute", bytes(str(msg),'utf-8'))
+            logging.debug("######## Ho inviato il messaggio Kafka ###########")
             #-------
 
             """app.logger.debug(msg.arrivalAddress)
@@ -166,11 +166,18 @@ def create_app(config = Config):
             app.logger.debug("----------------------------------")"""
 
 
-         
+  #NOTA BENE!!!! Il route handler NON deve eseguire in debug perchè altrimenti verranno creati due 
+            #Thread!!       
 
-   #Da tenere staccate finchè non sarà sistemato il database.
+  #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db       
+   scheduler = BackgroundScheduler()
    scheduler.add_job(queryDB, 'interval', minutes=1, args=[db, app])   
    scheduler.start()
+
+   @app.route("/debugScheduler")
+   def debugScheduler():
+
+      return "<p>" + str(scheduler.get_jobs()) + "</p>"
 
    @app.route("/getData/<user_id>", methods = ["GET"])
    def getData(user_id):

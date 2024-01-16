@@ -77,7 +77,8 @@ if consumer.bootstrap_connected() == True:
             logging.debug("--------------------------Reading the following message-------------------")    
             #logging.debug("Value: " + content)
             instances = to_str(str(content))
-            """for instance in instances:
+            logging.debug(instances)
+            for instance in instances:
                #for each instance, we have to resolve the user_id finding out the associated email
                endpoint = "http://user_manager:3001/getEmail/" + quote(instance.user_id)
                result = requests.get(endpoint)
@@ -104,7 +105,7 @@ if consumer.bootstrap_connected() == True:
                         server.login(email_address, password)
                         server.sendmail(sender_email, receiver_email, message.as_string())
                   else:
-                     logging.debug("Email not found!")"""
+                     logging.debug("Email not found!")
 
                      
 

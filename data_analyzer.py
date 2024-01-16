@@ -180,7 +180,7 @@ def handle_route(decodedMessage, departureTimes):
 
 def kafka_consumer():
     
-    consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"], consumer_timeout_ms=5000)
+    consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"])
     if consumer.bootstrap_connected() == True:
     
         consumer.subscribe(['PingRoute'])

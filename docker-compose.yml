@@ -27,6 +27,8 @@ services:
         - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://my.traffic.com:9093
         - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
         - KAFKA_CREATE_TOPICS="PingRoute:1:1"
+        - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
+        - KAFKA_CFG_LOG4J_LOGGERS=
       depends_on:
         - zookeeper
 
