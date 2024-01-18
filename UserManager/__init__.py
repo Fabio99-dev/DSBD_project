@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
-from config import Config
 from flask_sqlalchemy import SQLAlchemy
+import requests as http_request
 from datetime import timedelta
 from datetime import datetime
-import mysql.connector
+from urllib.parse import quote
 import os, socket
 import cryptography
 import re
@@ -24,7 +24,7 @@ def get_host_ip():
         print(f"Errore durante il recupero dell'indirizzo IP: {str(e)}")
         return None
 
-def create_app(config = Config):
+def create_app():
 
    #Creazione del modulo flask
    app = Flask(__name__)
@@ -155,15 +155,24 @@ def create_app(config = Config):
    #DA FARE: GESTIRE CHE ALLA TERMINAZIONE DEL CONTAINER IL DATABASE FA IL DUMP
    #E INDICARE CHE AL CARICAMENTO DEL CONTAINER CARICA IL DUMP PRECEDENTEMENTE FATTO
    #https://www.youtube.com/watch?v=WBqHr2kPc_A usare questa fonte
-   @app.route("/myip")
-   def myip():
-      return get_host_ip()
+   @app.route("/editAlert/<alertID>", methods = ["GET"])
+   def editAlert(alertID):
+      
+      if request.method == "GET":
+         endpoint = "http://route_handler:3002/getSubscriptionData/"+quote(alertID)
+         response = http_request.get(endpoint)
+         if response.status_code == 200:
+            decoded = json.dumps(response.json())
+            data = json.loads(decoded)
+            return render_template("privateArea2.html", data = data)
+    
+      
    
    @app.route("/privateArea", methods =["GET", "POST"])
    def privateArea():
       if request.method == "POST" or request.method == "GET":
          if session.get("authorized") != None:
-          return render_template("privateArea2.html")     
+          return render_template("privateArea2.html",data = None)     
          else:
             return redirect("login")   
       return render_template("errorpage.html")

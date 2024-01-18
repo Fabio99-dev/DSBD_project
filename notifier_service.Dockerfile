@@ -7,6 +7,6 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir kafka-python
 RUN pip3 install --no-cache-dir requests
 
-COPY . .
+COPY ./notifier_service.py .
 
 CMD ["python", "notifier_service.py"]

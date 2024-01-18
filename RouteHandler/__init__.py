@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 from flask_session import Session
-from config import Config
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from sqlalchemy.orm import aliased
 from sqlalchemy import and_
 import os
@@ -55,13 +55,10 @@ def checkNullValues(data):
       
       return True
 
-def create_app(config = Config):
+def create_app():
 
    #Il route handler è un producer kafka perchè invia messaggi al data_analyzer.
    producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
-
-   if producer.bootstrap_connected != True:
-      logging.debug("SONO UN COGLIONE PIRLA CHE NON E' IN GRADO DI CONNETTERSI")
 
    #Creazione del modulo flask
    app = Flask(__name__)
@@ -194,13 +191,14 @@ def create_app(config = Config):
       for route, subscription in query_result:
          entry = {
 
-            "subscription_id": subscription.id,     
+            "subscription_id": subscription.id,
+            "route_id": route.id,     
             "departureCity": route.departureCity,
             "departureCAP": route.departureCAP,
             "departureAddress": route.departureAddress,
             "arrivalCity": route.arrivalCity,
-            "arrivalCAP": route.departureCAP,
-            "arrivalAddress": route.departureAddress,
+            "arrivalCAP": route.arrivalCAP,
+            "arrivalAddress": route.arrivalAddress,
             "departTime": subscription.departTime,
             "notifyThreshold": subscription.notifyThreshold,
             "advances": subscription.advances
@@ -208,7 +206,77 @@ def create_app(config = Config):
          }
          routes.append(entry)
 
-      return routes     
+      return routes
+
+   @app.route("/deleteAlert/<alertID>/<routeID>", methods = ["GET"])
+   def deleteAlert(alertID, routeID):
+
+      with mutex_db:
+         #Si Elimina la sottoscrizione alla route per quell'utente   
+         db.session.query(SUBSCRIPTIONS).filter_by(id=alertID).delete()
+         #Si ricava poi il numero di sottoscrizioni per quella tratta
+         subscriptionCount = db.session.query(func.count(func.distinct(SUBSCRIPTIONS.route_id))).\
+          filter(SUBSCRIPTIONS.route_id == routeID).scalar()
+         #Se è uguale a 0, allora si elmina anche la route dal db
+         if(subscriptionCount == 0):
+            db.session.query(ROUTES).filter_by(id=routeID).delete()
+         db.session.commit()
+
+         
+      return redirect("/myAlerts")
+   
+   @app.route("/getSubscriptionData/<alertID>", methods = ["GET"])
+   def getSubscriptionData(alertID):
+      
+      with mutex_db:
+         route, subscription = db.session.query(ROUTES, SUBSCRIPTIONS).filter(SUBSCRIPTIONS.id == alertID).first()
+   
+      data = {
+
+            "subscription_id": subscription.id,
+            "route_id": route.id,     
+            "departureCity": route.departureCity,
+            "departureCAP": route.departureCAP,
+            "departureAddress": route.departureAddress,
+            "arrivalCity": route.arrivalCity,
+            "arrivalCAP": route.arrivalCAP,
+            "arrivalAddress": route.arrivalAddress,
+            "departTime": subscription.departTime,
+            "notifyThreshold": subscription.notifyThreshold,
+            "advances": subscription.advances
+
+         }
+      return json.dumps(data)
+   
+   @app.route("/changeAlert", methods = ["POST"])
+   def changeAlert():
+
+      data = {
+
+         "subscription_id": request.form.get("subscription_id"),
+         "departTime": request.form.get("departTime"),
+         "notifyThreshold":request.form.get("notifyThreshold")
+      }
+
+      if checkNullValues(data) != True:
+         session["ack"] = False
+         return redirect("/privateArea")
+
+      with mutex_db:
+         row = db.session.query(SUBSCRIPTIONS).filter(SUBSCRIPTIONS.id == data["subscription_id"]).first()
+
+         row.departTime = request.form.get("departTime")
+         row.notifyThreshold = request.form.get("notifyThreshold")
+         if(request.form.get("advances") == "on"):
+            row.advances = True
+         else:
+            row.advances = False
+         db.session.commit()
+         session["ack"] = True
+         return redirect("/privateArea")
+
+      
+
 
    @app.route("/sendData", methods = ["POST"])
    def sendData():

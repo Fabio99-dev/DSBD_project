@@ -40,11 +40,12 @@
         </div>
     </nav>
     <div class="container">
-    
+        {% if data == None %}
         <div class="row">
             <h4 class ="display-6">Benveuto {{session["name"]}} </h4>
             <div class="col-md-6">
                 <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
+                
                 <form id ="form" action="/sendData" method="POST">
                     <div id="partenza" style="display: flex;flex-direction: column;justify-content: space-between;">
                         <p style="text-align: center;font-weight: bold;">Dati partenza</p>
@@ -87,8 +88,7 @@
                 {% elif session["ack"] == True %}
                     <p class ="success">Percorso salvato!</p>
                 {% endif %}
-
-                <p>{{session["thread_debug"]}}</p>
+                
             </div>
         </div>
     </div>
@@ -96,8 +96,74 @@
         <p>(*) Le notifiche verranno ricevute se la durata stimata del percorso è superiore alla somma del tempo di percorrenza medio piú la soglia</p>
         <p>(**) Se selezionata, si verrà notificati anche nel caso il percorso prevede una percorrenza minore rispetto alla durata normale.</p>
     </div>
-    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
     <script src="{{ url_for('static', filename='bootstrap/js/privateArea.js')}}" defer></script>
+    {% else %}
+
+    <div class="row">
+        <h4 class ="display-6">Modifica Alert </h4>
+        <div class="col-md-6">
+            <h1 class="display-6" style="color: var(--bs-blue);/*font-weight: bold;*/text-align: center;">Nuovo alert</h1>
+            <form id ="form" action="/changeAlert" method="POST">
+                <input type ="hidden" name = "subscription_id" value = "{{data['subscription_id']}}">
+                <div id="partenza" style="display: flex;flex-direction: column;justify-content: space-between;">
+                    <p style="text-align: center;font-weight: bold;">Dati partenza</p>
+                    <div style="display: flex;flex-direction: column;justify-content: space-between;height: 6em;">
+                        <div style="display: flex;justify-content: space-between;width: 100%;">
+                            <input disabled value ="{{data['departureCity']}}" name="departureCity" class="form-control" type="text" placeholder="Città" style="margin-right: 0.75em;">
+                            <input disabled value ="{{data['departureCAP']}}" name="departureCAP" class="form-control" type="text" placeholder="CAP"></div>
+                            <input disabled value ="{{data['departureAddress']}}" name="departureAddress" class="form-control" type="text" placeholder="Indirizzo">
+                    </div>
+                </div>
+                <div id="arrivo" style="display: flex;flex-direction: column;justify-content: space-between;">
+                    <p style="text-align: center;font-weight: bold;">Dati arrivo</p>
+                    <div style="display: flex;flex-direction: column;justify-content: space-between;height: 6em;">
+                        <div style="display: flex;justify-content: space-between;width: 100%;">
+                            <input disabled value ="{{data['arrivalCity']}}" name="arrivalCity" class="form-control" type="text" placeholder="Città" style="margin-right: 0.75em;">
+                            <input disabled value ="{{data['arrivalCAP']}}" name="arrivalCAP" class="form-control" type="text" placeholder="CAP"></div>
+                            <input disabled value ="{{data['arrivalAddress']}}" name="arrivalAddress" class="form-control" type="text" placeholder="Indirizzo">
+                    </div>
+                </div><label class="form-label form-entry" style="margin-top: 1em;">Orario di partenza
+                    <input name="departTime" class="form-control" type="time"></label>
+                    <label class ="form-label form-entry">Tempo di percorrenza <br> medio<input name="travelTime" class="form-control" type="text" disabled="true"></label>
+                    <label class="form-label form-entry">Durata stimata
+                    <input name="estimatedArrivalTime" class="form-control" type="text" disabled="true"></label>
+                    <label class="form-label form-entry">Soglia di notifica
+                    <input name="notifyThreshold" class="form-control" type="number" placeholder="Soglia di notifica (minuti)"></label><label class="form-label" style="margin-top: 0.5em;display: flex;align-items: center;">
+                        {%if data['advances'] == True %}
+                        <input checked name="advances" type="checkbox" style="margin-right: 0.5em;">Notificami gli anticipi (**)</label>
+                        {%else%}
+                        <input  name="advances" type="checkbox" style="margin-right: 0.5em;">Notificami gli anticipi (**)</label>   
+                        {% endif %}
+                <div style="display: flex;justify-content: end;margin-top: 0.5em;"><input class="btn btn-primary" type="submit" value="Modifica alert"></div>
+                <input id ="startingLatitude" type="hidden" name ="departureLatitude">
+                <input id ="startingLongitude" type="hidden" name ="departureLongitude">
+                <input id ="endingLatitude" type="hidden" name ="arrivalLatitude">
+                <input id ="endingLongitude" type="hidden" name ="arrivalLongitude">
+            </form>
+        </div>
+        <div class="col">
+            <h1 class="display-6" style="text-align: center;color: var(--bs-blue);">Anteprima percorso</h1>
+            <iframe id ="map" allowfullscreen="" frameborder="0" loading="lazy" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBonANlvTZDMhpcdoxhJSUHzZusR_BSf64&amp;q=Italy" width="100%" height="400"></iframe>
+            <p>Le posizioni effettive sono soggette ad imprecisioni</p>
+            <p>Puoi modificare solo i parametri della sottoscrizione.</p>
+            <p>Per modificare le impostazioni di tratta, crea un nuovo alert.</p>
+            {%if session["ack"] == False %}
+                <p class ="error">Sono presenti dei campi vuoti</p>
+            {% elif session["ack"] == True %}
+                <p class ="success">Percorso salvato!</p>
+            {% endif %}
+            
+        </div>
+    </div>
+    </div>
+    <div class="container">
+        <p>(*) Le notifiche verranno ricevute se la durata stimata del percorso è superiore alla somma del tempo di percorrenza medio piú la soglia</p>
+        <p>(**) Se selezionata, si verrà notificati anche nel caso il percorso prevede una percorrenza minore rispetto alla durata normale.</p>
+    </div>
+    <script src="{{ url_for('static', filename='bootstrap/js/editAlert.js')}}" defer></script>
+    {%endif%}
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+    
 </body>
 
 {% endif %}

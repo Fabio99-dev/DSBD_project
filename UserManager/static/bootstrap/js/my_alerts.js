@@ -113,7 +113,7 @@ function onData(json){
         deleteButton.classList.add("btn-danger")
 
         const deleteLink = document.createElement("a")
-        deleteLink.href = "http://my.traffic.com:8080/deleteAlert/"+encodeURIComponent(json[i].subscription_id)
+        deleteLink.href = "http://my.traffic.com:8080/deleteAlert/"+encodeURIComponent(json[i].subscription_id)+"/"+encodeURIComponent(json[i].route_id)
 
         const deleteIcon = document.createElement("img")
         deleteIcon.src = "http://127.0.0.1:3001/static/img/trash-fill.png"
@@ -128,7 +128,7 @@ function onData(json){
         editButton.classList.add("btn-warning")
 
         const editLink = document.createElement("a")
-        deleteLink.href = "http://127.0.0.1:3001/editAlert/"+encodeURIComponent(json[i].subscription_id)
+        editLink.href = "http://my.traffic.com:8080/editAlert/"+encodeURIComponent(json[i].subscription_id)
 
         const editIcon = document.createElement("img")
         editIcon.src = "http://127.0.0.1:3001/static/img/pencil-fill.png"

@@ -7,6 +7,6 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir requests
 RUN pip3 install --no-cache-dir kafka-python
 
-COPY . .
+COPY ./data_analyzer.py .
 
 CMD ["python", "data_analyzer.py"]

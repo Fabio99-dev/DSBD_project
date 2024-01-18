@@ -72,7 +72,7 @@ if consumer.bootstrap_connected() == True:
     while True:
      message = consumer.poll()
      if(message != None):
-        for message in consumer:
+        """for message in consumer:
             content = message.value.decode('utf-8')    
             logging.debug("--------------------------Reading the following message-------------------")    
             #logging.debug("Value: " + content)
@@ -105,7 +105,7 @@ if consumer.bootstrap_connected() == True:
                         server.login(email_address, password)
                         server.sendmail(sender_email, receiver_email, message.as_string())
                   else:
-                     logging.debug("Email not found!")
+                     logging.debug("Email not found!")"""
 
                      
 
