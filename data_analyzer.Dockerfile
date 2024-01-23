@@ -6,6 +6,7 @@ WORKDIR /app
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir requests
 RUN pip3 install --no-cache-dir kafka-python
+RUN pip3 install --no-cache-dir psutil
 
 COPY ./data_analyzer.py .
 

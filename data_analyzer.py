@@ -4,8 +4,7 @@ from urllib.parse import quote
 import requests
 import concurrent.futures
 import json
-
-
+import psutil
 BING_API_KEY = "At71cbvTs-4zsbhV7M07ZYd41Y4FGK3PHvVOxTVZMz75lxwc1M-IQyZHypkgscJ6"
 
 #Logger
@@ -160,7 +159,7 @@ def handle_route(decodedMessage, departureTimes):
             entry = (subscribe[2], message)
             alerts_to_send.append(entry)
          #logging.debug("SECOND OPERATION " + str(int(standardTime) - int(subscribe[0])))
-         if -(int(standardTime) - int(subscribe[0])) < int(travelTime and subscribe[1] == True):
+         elif subscribe[1] == True and abs((int(standardTime) - int(subscribe[0]))) < int(travelTime):
             #logging.debug("########### PASSED THE SECOND CHECK ###########")
             #Code to send a kafka message
             delta = int(travelTime) - int(subscribe[0]) 
@@ -171,7 +170,8 @@ def handle_route(decodedMessage, departureTimes):
       #send the kafka message here
       logging.debug("#############RESULT###############")       
       logging.debug("RESULT: " + str(alerts_to_send))       
-      producer.send("AlertMessage",bytes(str(alerts_to_send), 'utf-8'))       
+      producer.send("AlertMessage",bytes(str(alerts_to_send), 'utf-8'))  
+     # producer.close()     
             
            
     else:
@@ -183,23 +183,43 @@ def kafka_consumer():
     consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"])
     if consumer.bootstrap_connected() == True:
     
-        consumer.subscribe(['PingRoute'])
+        consumer.subscribe(['MetricRequest'])
 
         while True:
             message = consumer.poll()
             if(message != None):
                 for message in consumer:
-                    #logging.debug("########## Reading the following message ################")
-                    content = message.value.decode('utf-8')  
-                    #logging.debug("Value: " + content)
-                    decodedMessage = Message.from_str(content)
-                    #logging.debug(decodedMessage)
-                    departureTimes = getDepartureTimes(decodedMessage.subscriptionsList)
-                    logging.debug("########## departure times ################")
-                    logging.debug(departureTimes) 
-                    #with concurrent.futures.ThreadPoolExecutor() as executor:
-                     #executor.submit(handle_route, decodedMessage, departureTimes)
-                    handle_route(decodedMessage, departureTimes)
+                    
+                    logging.debug("########## Reading the following message ################")
+                    content = message.value.decode('utf-8')
+                    logging.debug(content)
+                    if content != "MetricRequest":  
+                       logging.debug("Value: " + content)
+                       decodedMessage = Message.from_str(content)
+                     #logging.debug(decodedMessage)
+                       departureTimes = getDepartureTimes(decodedMessage.subscriptionsList)
+                       logging.debug("########## departure times ################")
+                       logging.debug(departureTimes) 
+                           #with concurrent.futures.ThreadPoolExecutor() as executor:
+                           # executor.submit(handle_route, decodedMessage, departureTimes)
+                       handle_route(decodedMessage, departureTimes)
+                    else:
+                       producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
+                       data = {
+                        "container_name": "data_analyzer", 
+                        "frequency": str(psutil.cpu_freq(False)[0]),
+                        "load":  str(psutil.cpu_percent())
+                        }
+                       logging.debug("###############HO fatto il fetch delle metriche #########")
+                       producer.send("MetricResponse",bytes(json.dumps(data), 'utf-8'))
+                      
+                       producer.close()  
+                  
+                    
+            
+
+
+
 
 if __name__ == '__main__':
     kafka_consumer()

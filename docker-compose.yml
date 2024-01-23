@@ -1,5 +1,27 @@
 version: '3'
 services:
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  cpu_exporter:
+   restart: always
+   build:
+      context: .
+      dockerfile: cpu_exporter.Dockerfile
+   container_name: cpu_exporter
+   depends_on:
+      - prometheus
+   expose:
+      - "8000"
+   ports:
+      - "8000:8000"  
+
   zookeeper:
       restart: always
       image: docker.io/bitnami/zookeeper:3.8
@@ -26,7 +48,8 @@ services:
         - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
         - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://my.traffic.com:9093
         - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
-        - KAFKA_CREATE_TOPICS="PingRoute:1:1"
+        - KAFKA_CREATE_TOPICS="PingRoute:1:1,AlertMessage:1:1,MetricRequest:1:1,MetricResponse:1:1"
+        - KAFKA_CFG_MESSAGE_MAX_BYTES=20000000
         - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
         - KAFKA_CFG_LOG4J_LOGGERS=
       depends_on:
@@ -124,7 +147,4 @@ services:
 volumes:
     kafka-volume:
     zookeeper-volume:
-
-
-
 

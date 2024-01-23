@@ -6,7 +6,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
-
+import psutil
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -66,47 +66,58 @@ def to_str(string):
 
 
 consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"], consumer_timeout_ms=5000)
+producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
 if consumer.bootstrap_connected() == True:
 
-    consumer.subscribe(['AlertMessage'])
+    consumer.subscribe(['MetricRequest'])
     while True:
      message = consumer.poll()
      if(message != None):
-        """for message in consumer:
+        for message in consumer:
             content = message.value.decode('utf-8')    
             logging.debug("--------------------------Reading the following message-------------------")    
-            #logging.debug("Value: " + content)
-            instances = to_str(str(content))
-            logging.debug(instances)
-            for instance in instances:
-               #for each instance, we have to resolve the user_id finding out the associated email
-               endpoint = "http://user_manager:3001/getEmail/" + quote(instance.user_id)
-               result = requests.get(endpoint)
-               if result.status_code == 200:
-                  #parse the response from json to a python object
-                  decoded = json.dumps(result.json())
-                  object = json.loads(decoded)
-                  if object["status"] == "ok":
-                     #send the email.
-                     subject = "Alert MyTraffic"
-                     body = instance.message + "\n" + "Grazie" + "\n" +"Il team di MyTraffic"
-                     sender_email = email_address
-                     receiver_email = object["email"]
+            logging.debug("Value: " + content)
+            if content != "MetricRequest":
+               logging.debug(instances)       
+               instances = to_str(str(content))
+               for instance in instances:
+                  #for each instance, we have to resolve the user_id finding out the associated email
+                  endpoint = "http://user_manager:3001/getEmail/" + quote(instance.user_id)
+                  result = requests.get(endpoint)
+                  if result.status_code == 200:
+                     #parse the response from json to a python object
+                     decoded = json.dumps(result.json())
+                     object = json.loads(decoded)
+                     if object["status"] == "ok":
+                        #send the email.
+                        subject = "Alert MyTraffic"
+                        body = instance.message + "\n" + "Grazie" + "\n" +"Il team di MyTraffic"
+                        sender_email = email_address
+                        receiver_email = object["email"]
 
-                     message = MIMEMultipart()
-                     message["From"] = sender_email
-                     message["To"] = receiver_email
-                     message["Subject"] = subject
-                     message.attach(MIMEText(body, "plain"))
+                        message = MIMEMultipart()
+                        message["From"] = sender_email
+                        message["To"] = receiver_email
+                        message["Subject"] = subject
+                        message.attach(MIMEText(body, "plain"))
 
-                     with smtplib.SMTP(smtp_server, smtp_port) as server:
-                       
-                        server.starttls()
-                        server.login(email_address, password)
-                        server.sendmail(sender_email, receiver_email, message.as_string())
-                  else:
-                     logging.debug("Email not found!")"""
+                        with smtplib.SMTP(smtp_server, smtp_port) as server:
+                           
+                           server.starttls()
+                           server.login(email_address, password)
+                          # server.sendmail(sender_email, receiver_email, message.as_string())
+                     else:
+                        logging.debug("Email not found!")
 
+            else:
+                data = {
+                     "container_name": "notifier_service", 
+                     "frequency": str(psutil.cpu_freq(False)[0]),
+                     "load":  str(psutil.cpu_percent())
+                     }
+                logging.debug("############## HO fatto il fetch delle metriche #########")
+                producer.send("MetricResponse",bytes(json.dumps(data), 'utf-8'))
+                    
                      
 
                        

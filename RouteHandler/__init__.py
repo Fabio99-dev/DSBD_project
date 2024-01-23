@@ -10,7 +10,7 @@ import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging, sys
 import kafka
-import socket
+import psutil
 import json
 
 #Mutex globale per l'accesso al db
@@ -134,7 +134,14 @@ def create_app():
       def __repr__(self):
         return self.__str__()
   
+   @app.route("/route_handler_cpu_metrics", methods = ["GET"])
+   def metrics():
+      data = {
 
+         "frequency": str(psutil.cpu_freq(False)[0]),
+         "load":  str(psutil.cpu_percent())
+      }
+      return json.dumps(data)
 
 
   # @app.route("/queryDB", methods=["GET"])
