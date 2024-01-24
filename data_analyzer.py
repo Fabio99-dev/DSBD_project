@@ -5,6 +5,7 @@ import requests
 import concurrent.futures
 import json
 import psutil
+import time as timeLibrary
 BING_API_KEY = "At71cbvTs-4zsbhV7M07ZYd41Y4FGK3PHvVOxTVZMz75lxwc1M-IQyZHypkgscJ6"
 
 #Logger
@@ -133,8 +134,10 @@ def handle_route(decodedMessage, departureTimes):
  producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
  
  for time in departureTimes:
+    start_time = timeLibrary.time()
     endpoint = "http://dev.virtualearth.net/REST/V1/Routes?wp.0="+quote(decodedMessage.departureLatitude)+","+quote(decodedMessage.departureLongitude)+"&wp.1=" + quote(decodedMessage.arrivalLatitude) + "," +quote(decodedMessage.arrivalLongitude) +"&dateTime="+ quote(time) + "&key=" + BING_API_KEY 
     response = requests.get(endpoint)
+    elapsed_time = timeLibrary.time() - start_time
     logging.debug("############# STO ESEGUENDO IL THREAD #############")  
     if response.status_code == 200:
       #Conversione del JSON in object Python
@@ -171,6 +174,7 @@ def handle_route(decodedMessage, departureTimes):
       logging.debug("#############RESULT###############")       
       logging.debug("RESULT: " + str(alerts_to_send))       
       producer.send("AlertMessage",bytes(str(alerts_to_send), 'utf-8'))  
+      return elapsed_time
      # producer.close()     
             
            
@@ -183,9 +187,10 @@ def kafka_consumer():
     consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"])
     if consumer.bootstrap_connected() == True:
     
-        consumer.subscribe(['MetricRequest'])
+        consumer.subscribe(['MetricRequest', 'PingRoute'])
 
         while True:
+            elapsed_time = 0
             message = consumer.poll()
             if(message != None):
                 for message in consumer:
@@ -202,13 +207,15 @@ def kafka_consumer():
                        logging.debug(departureTimes) 
                            #with concurrent.futures.ThreadPoolExecutor() as executor:
                            # executor.submit(handle_route, decodedMessage, departureTimes)
-                       handle_route(decodedMessage, departureTimes)
+                       elapsed_time = handle_route(decodedMessage, departureTimes)
                     else:
                        producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
                        data = {
                         "container_name": "data_analyzer", 
                         "frequency": str(psutil.cpu_freq(False)[0]),
-                        "load":  str(psutil.cpu_percent())
+                        "load":  str(psutil.cpu_percent()),
+                        "ram_usage": str(psutil.virtual_memory()[2]),
+                        "elapsed_time": str(elapsed_time)
                         }
                        logging.debug("###############HO fatto il fetch delle metriche #########")
                        producer.send("MetricResponse",bytes(json.dumps(data), 'utf-8'))

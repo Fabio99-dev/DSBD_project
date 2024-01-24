@@ -69,7 +69,7 @@ consumer = kafka.KafkaConsumer(bootstrap_servers = ["kafka:9092"], consumer_time
 producer = kafka.KafkaProducer(bootstrap_servers = ["kafka:9092"])
 if consumer.bootstrap_connected() == True:
 
-    consumer.subscribe(['MetricRequest'])
+    consumer.subscribe(['MetricRequest', 'AlertMessage'])
     while True:
      message = consumer.poll()
      if(message != None):
@@ -77,9 +77,9 @@ if consumer.bootstrap_connected() == True:
             content = message.value.decode('utf-8')    
             logging.debug("--------------------------Reading the following message-------------------")    
             logging.debug("Value: " + content)
-            if content != "MetricRequest":
-               logging.debug(instances)       
+            if content != "MetricRequest":        
                instances = to_str(str(content))
+               logging.debug(instances)       
                for instance in instances:
                   #for each instance, we have to resolve the user_id finding out the associated email
                   endpoint = "http://user_manager:3001/getEmail/" + quote(instance.user_id)
@@ -113,6 +113,7 @@ if consumer.bootstrap_connected() == True:
                 data = {
                      "container_name": "notifier_service", 
                      "frequency": str(psutil.cpu_freq(False)[0]),
+                     "ram_usage": str(psutil.virtual_memory()[2]),
                      "load":  str(psutil.cpu_percent())
                      }
                 logging.debug("############## HO fatto il fetch delle metriche #########")

@@ -12,6 +12,8 @@ import logging, sys
 import kafka
 import psutil
 import json
+import multiprocessing
+import time
 
 #Mutex globale per l'accesso al db
 mutex_db = threading.Lock()
@@ -133,22 +135,29 @@ def create_app():
       
       def __repr__(self):
         return self.__str__()
+      
+   queryTime = multiprocessing.Value('d', 0.0)
   
    @app.route("/route_handler_cpu_metrics", methods = ["GET"])
    def metrics():
-      data = {
+      with queryTime.get_lock():
+         data = {
 
-         "frequency": str(psutil.cpu_freq(False)[0]),
-         "load":  str(psutil.cpu_percent())
-      }
+            "frequency": str(psutil.cpu_freq(False)[0]),
+            "load":  str(psutil.cpu_percent()),
+            "ram_usage": str(psutil.virtual_memory()[2]),
+            "query_time": str(queryTime.value)
+         }
       return json.dumps(data)
 
 
-  # @app.route("/queryDB", methods=["GET"])
-   def queryDB(db, app):
+   def queryDB(db, app, queryTime):
       
-      with app.app_context(),mutex_db:
+      with app.app_context(),mutex_db, queryTime.get_lock():
+         startTime = time.time()
          routes = db.session.query(ROUTES).all()
+         queryTime.value = time.time() - startTime
+         logging.debug("########## Query time: " + str(queryTime)+ " ########")
          for route in routes:
             subscriptions = db.session.query(SUBSCRIPTIONS).filter(SUBSCRIPTIONS.route_id == route.id).all()
             msg = message(route.id, route.departureLatitude, route.departureLongitude,
@@ -159,23 +168,13 @@ def create_app():
             logging.debug("######## Ho inviato il messaggio Kafka ###########")
             #-------
 
-            """app.logger.debug(msg.arrivalAddress)
-            app.logger.debug(msg.arrivalCity)   
-            app.logger.debug(msg.subscriptionsList)
-            app.logger.debug(str(msg.subscriptionsList.count))
-            for subscription in subscriptions:
-               
-               app.logger.debug(str(subscription.id) + " " + str(subscription.route_id) + " " + str(subscription.departTime))
-               
-            app.logger.debug("----------------------------------")"""
-
 
   #NOTA BENE!!!! Il route handler NON deve eseguire in debug perchè altrimenti verranno creati due 
             #Thread!!       
 
   #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db       
    scheduler = BackgroundScheduler()
-   scheduler.add_job(queryDB, 'interval', minutes=1, args=[db, app])   
+   scheduler.add_job(queryDB, 'interval', minutes=1, args=[db, app, queryTime])   
    scheduler.start()
 
    @app.route("/debugScheduler")
@@ -349,19 +348,3 @@ def create_app():
                db.session.commit()   
             return redirect("/privateArea")
    return app
-
-"""if data["advances"] == "on":
-                r =  ROUTES(data["departureCity"], data["departureCAP"], 
-                            data["departureAddress"], data["arrivalCity"], data["arrivalCAP"],
-                            data["arrivalAddress"], data["departTime"], data["notifyThreshold"],
-                            True)
-            else:
-               r =  ROUTES(data["departureCity"], data["departureCAP"], 
-                            data["departureAddress"], data["arrivalCity"], data["arrivalCAP"],
-                            data["arrivalAddress"], data["departTime"], data["notifyThreshold"],
-                            False)
-            mutex_db.acquire()   
-            db.session.add(instance=r)
-            db.session.commit()
-            mutex_db.release()
-            return redirect("/privateArea") """

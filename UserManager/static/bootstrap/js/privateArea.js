@@ -142,19 +142,6 @@ function onRoute(json){
 3. L'evento su focusout rimane ed esegue la query a bingMaps, facendo però la conversione prima 
 dei luoghi in coordinate.*/
 
-function funzione(event){
-
-    if(partenza.value !== '' && arrivo.value !== '' && oraPartenza.value !== ''){
-
-    console.log("TEST");
-    fetch("http://dev.virtualearth.net/REST/V1/Routes/Driving?o=json&wp.0="+ partenza.value + "&wp.1="+arrivo.value +"&avoid=minimizeTolls&dateTime="+ oraPartenza.value +"&key=At71cbvTs-4zsbhV7M07ZYd41Y4FGK3PHvVOxTVZMz75lxwc1M-IQyZHypkgscJ6").then(onResponse).then(onJson)
-    
-    }else{
-
-        console.log("Ho ricevuto un evento")
-    }
-  
-}
 
 function onResponse(response){
 

@@ -17,8 +17,10 @@ logging.basicConfig(level=logging.INFO)
 # Crea una metrica di tipo Gauge con etichette
 cpu_frequency_metric = Gauge('container_cpu_frequency', 'Instant cpu frequency of the container', ['container_id'])
 cpu_load_metric = Gauge('container_cpu_load', 'Average load of CPU consumed by the container',  ['container_id'])
+query_time = Gauge('query_database_time', 'Time spent for querying the RouteDB by the route handler')
 #metric_test = Gauge('sample metric test', 'this is a substitution con cpu load metric', ["container_id"])
-
+api_response_time = Gauge('api_response_time', 'response time of bing API')
+ram_usage = Gauge('container_ram_usage', 'Average percentage of RAM memory usage', ["container_id"])
 def get_route_handler_data():
    
     logging.info("3. Running the route_handler monitoring function")
@@ -29,7 +31,21 @@ def get_route_handler_data():
          decoded = json.dumps(route_handeler_data.json())
          object = json.loads(decoded)
          cpu_frequency_metric.labels(container_id="route_handler").set(object["frequency"])
-         cpu_load_metric.labels(container_id="route_handler").set(object["load"])    
+         cpu_load_metric.labels(container_id="route_handler").set(object["load"])
+         ram_usage.labels(container_id = "route_handler").set(object["ram_usage"])
+         query_time.set(str(object["query_time"]))
+
+def get_user_manager_data():
+
+    route_handeler_data = requests.get("http://user_manager:3001/get_metrics")
+    if route_handeler_data.status_code == 200:
+        # Imposta il valore della metrica con etichette
+         decoded = json.dumps(route_handeler_data.json())
+         object = json.loads(decoded)
+         cpu_frequency_metric.labels(container_id="user_manager").set(object["frequency"])
+         cpu_load_metric.labels(container_id="user_manager").set(object["load"])    
+         ram_usage.labels(container_id = "user_manager").set(object["ram_usage"])
+
 
  
    
@@ -44,7 +60,10 @@ if __name__ == '__main__':
     
     while True:
 
+        get_user_manager_data()
+
         get_route_handler_data()
+
         producer.send("MetricRequest",bytes(str("MetricRequest"), 'utf-8'))
         producer.flush() 
         message = consumer.poll()
@@ -57,6 +76,10 @@ if __name__ == '__main__':
                 cpu_freq = round(cpu_freq,2)
                 cpu_frequency_metric.labels(container_id=object["container_name"]).set(str(cpu_freq))
                 cpu_load_metric.labels(container_id=object["container_name"]).set(object["load"])
+                ram_usage.labels(container_id = object["container_name"]).set(object["ram_usage"])
+                if 'elapsed_time' in object:
+                    api_response_time.set(object['elapsed_time'])
+
                 logging.info(str(object))
         time.sleep(15)
         

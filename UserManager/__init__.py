@@ -9,7 +9,8 @@ import os, socket
 import cryptography
 import re
 import hashlib
-import logging, sys
+import logging
+import psutil
 import json
 
 
@@ -193,12 +194,16 @@ def create_app():
                  "user_id": user_id,
                  "email": "email not found!"})
    
-   @app.route("/test")
-   def test():
-     # test_db()
-     u = USERS("Fabio","castiglionefabio80@gmail.com", '123456789')
-     db.session.add(instance=u)
-     db.session.commit() 
+   @app.route("/get_metrics")
+   def get_metrics():
+      data = {
+
+         "frequency": str(psutil.cpu_freq(False)[0]),
+         "ram_usage": str(psutil.virtual_memory()[2]),
+         "load":  str(psutil.cpu_percent())
+      }
+      return json.dumps(data)
+     
 
      
 
