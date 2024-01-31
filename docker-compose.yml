@@ -1,36 +1,50 @@
 version: '3'
+
+networks:
+  my_traffic_network:
+    driver: bridge
+
 services:
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    networks:
+      - my_traffic_network
 
-  cpu_exporter:
+  metrics_exporter:
    restart: always
    build:
-      context: .
-      dockerfile: cpu_exporter.Dockerfile
-   container_name: cpu_exporter
+      context: ./MetricsExporter
+      dockerfile: metrics_exporter.Dockerfile
+   container_name: metrics_exporter
    depends_on:
       - prometheus
    expose:
       - "8000"
    ports:
-      - "8000:8000"  
+      - "8000:8000"
+   volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+   networks:
+    - my_traffic_network  
 
   zookeeper:
-      restart: always
-      image: docker.io/bitnami/zookeeper:3.8
-      ports:
-        - "22181:2181"
-      volumes:
-        - "zookeeper-volume:/bitnami"
-      environment:
-        - ALLOW_ANONYMOUS_LOGIN=yes
+    restart: always
+    image: docker.io/bitnami/zookeeper:3.8
+    ports:
+      - "22181:2181"
+    volumes:
+      - "zookeeper-volume:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - my_traffic_network
+
   kafka:
       restart: always
       image: docker.io/bitnami/kafka:3.3
@@ -54,34 +68,36 @@ services:
         - KAFKA_CFG_LOG4J_LOGGERS=
       depends_on:
         - zookeeper
+      networks:
+        - my_traffic_network
 
   database:
-    #image: mysql:latest
     container_name: MyTrafficDB
-    #environment:
-      #MYSQL_ROOT_PASSWORD: toor
-      #MYSQL_DATABASE: MyTrafficDB
     build:
-      context: .
+      context: ./MyTrafficDB
       dockerfile: database.Dockerfile
+    volumes:
+      - ./MyTrafficDB/mysql-data:/var/lib/mysql  
     ports:
       - "6033:3306"
+    networks:
+      - my_traffic_network
 
   database2:
-    #image: mysql:latest
     container_name: RoutesDB
-    #environment:
-      #MYSQL_ROOT_PASSWORD: toor
-      #MYSQL_DATABASE: MyTrafficDB
     build:
-      context: .
+      context: ./RoutesDB
       dockerfile: database2.Dockerfile
+    volumes:
+      - ./RoutesDB/mysql-data:/var/lib/mysql    
     ports:
-      - "6034:3306"        
+      - "6034:3306"
+    networks:
+      - my_traffic_network        
 
   user_manager:
     build:
-      context: .
+      context: ./UserManager
       dockerfile: user_manager.Dockerfile
     container_name: user_manager
     depends_on:
@@ -92,12 +108,14 @@ services:
       - "3001"
     ports:
       - "3001:3001"
+    networks:
+      - my_traffic_network
 
   route_handler:
     restart:
         always
     build:
-      context: .
+      context: ./RouteHandler
       dockerfile: route_handler.Dockerfile
     container_name: route_handler
     depends_on:
@@ -109,42 +127,77 @@ services:
       - "3002"
     ports:
       - "3002:3002"
+    networks:
+      - my_traffic_network
 
   data_analyzer:
     restart:
       always
     build:
-      context: .
+      context: ./DataAnalyzer
       dockerfile: data_analyzer.Dockerfile
     container_name: data_analyzer
     depends_on:
-      - route_handler
       - kafka
+    networks:
+      - my_traffic_network
 
   notifier_service:
     restart:
       always
     build:
-      context: .
+      context: ./NotifierService
       dockerfile: notifier_service.Dockerfile
     container_name: notifier_service
     depends_on:
-      - data_analyzer
-      - kafka      
+      - kafka   
+    networks:
+      - my_traffic_network   
    
   nginx:
+    restart:
+      always
     image: nginx:alpine
     container_name: api_gateway_my_traffic
     volumes:
-      - ./api_gateway.conf:/etc/nginx/conf.d/api_gateway.conf
+      - ./ApiGateway/api_gateway.conf:/etc/nginx/conf.d/api_gateway.conf
     ports:
       - "8080:80"
     depends_on:
       - user_manager
       - route_handler
-      - data_analyzer
+      - sla_manager
+    networks:
+      - my_traffic_network
+
+  sla_manager:
+    restart:
+      always
+    build:
+      context: ./SlaManager
+      dockerfile: sla_manager.Dockerfile
+    container_name: sla_manager
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database3
+      - prometheus 
+    networks:
+      - my_traffic_network
+      
+  database3:
+    container_name: SlaManagerDB
+    build:
+      context: ./SlaManagerDB
+      dockerfile: SlaManagerDB.Dockerfile
+    volumes:
+      - ./SlaManagerDB/mysql-data:/var/lib/mysql 
+    ports:
+      - "6035:3306"
+    networks:
+      - my_traffic_network
+ 
 
 volumes:
     kafka-volume:
     zookeeper-volume:
-

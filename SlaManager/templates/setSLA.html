@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>MyTraffic</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Login-Form-Basic-icons.css')}}">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md bg-body py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span class="bs-icon-sm bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+          </svg></span><span>MyTraffic</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-2"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-2">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#">First Item</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Third Item</a></li>
+                </ul><a class="btn btn-primary ms-md-2" role="button" href="#">Button</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="container margin-top">
+        <h3 class ="display-6">SLA corrente</h3>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Metrica</th>
+                        <th>Soglia minima</th>
+                        <th>Soglia massima</th>
+                        <th>Unità di misura</th>
+                        <th>Attivata</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td>{{item["nome_metrica"]}}</td>
+                        <td>{{item["soglia_minima"]}}</td>
+                        <td>{{item["soglia_massima"]}}</td>
+                        <td>{{item["unita_misura"]}}</td>
+                        <td>{{item["attivata"]}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class ="display-6">Modifica SLA</h2>
+<div class ="FlexDiv space-between margin-top">
+
+    <form id="form_sla" action="/sendSlaData" method="post">
+       
+        {% for item in data %}
+        <div class="metrica">
+            {% if item["attivata"] == True %} 
+            <input type="checkbox" checked id="{{'container_' + item['nome_metrica']}}" name="{{item['nome_metrica']}}" value="1">
+            {% else %}
+            <input type="checkbox" id="{{'container_' + item['nome_metrica']}}" name="{{item['nome_metrica']}}" value="1">
+            {%endif%}
+            {% if item["nome_metrica"] == "availability_rate" %}
+            <label for="{{'container_' + item['nome_metrica']}}">{{item['nome_metrica']}}</label>
+            Soglia Minima: <input type="number" step="0.001" id="sogliaMin_{{item['nome_metrica']}}" name="sogliaMin_{{item['nome_metrica']}}" value = "{{item['soglia_minima']}}">
+            Soglia Massima: <input type="number" readonly id="sogliaMax_{{item['nome_metrica']}}" name="sogliaMax_{{item['nome_metrica']}}" value = "100.00">
+            {%else%}
+            <label for="{{'container_' + item['nome_metrica']}}">{{item['nome_metrica']}}</label>
+            Soglia Minima: <input type="number" step="0.0001" id="sogliaMin_{{item['nome_metrica']}}" name="sogliaMin_{{item['nome_metrica']}}" value = "{{item['soglia_minima']}}">
+            Soglia Massima: <input type="number" step="0.0001" id="sogliaMax_{{item['nome_metrica']}}" name="sogliaMax_{{item['nome_metrica']}}" value = "{{item['soglia_massima']}}">      
+
+            {%endif%}    
+        </div>
+        {% endfor %}
+
+        <!-- Pulsante di invio -->
+        <button type="submit" >Modifica SLA</button>
+    </form>
+
+
+</div>
+
+    <div class="table-responsive margin-top">
+        <h3 class ="display-6">Stato SLA</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Metrica</th>
+                    <th>Valore attuale</th>
+                    <th>Valore desiderato</th>
+                    <th>Stato della metrica</th>
+                    <th>Numero di violazioni (1h)</th>
+                    <th>Numero di violazioni (3h)</th>
+                    <th>Numero di violazioni (6h)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                {% if item["attivata"] == True %}
+                    <tr>
+                        <td>{{item["nome_metrica"]}}</td>
+                        <td>{{item["valore_attuale"]}}</td>
+                        <td>{{item["soglia_minima"]}} - {{item["soglia_massima"]}}</td>
+                        <td>{{item["stato_slo"]}}</td>
+                        <td>{{item["violazioni_1h"]}}</td>
+                        <td>{{item["violazioni_3h"]}}</td>
+                        <td>{{item["violazioni_6h"]}}</td>
+                    </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="button"><a href="/setSLA"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">  <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>  <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg></a></button>
+    </div>
+    </section>
+    
+    <section class="container margin-top">
+        <h1 class="display-6">Violazioni in intervallo custom</h1>
+        <div class ="FlexDiv space-between">
+
+            <div id ="formDiv">
+            <form method="post" id ="custom_interval">
+                <label class="form-label form-entry">Istante di inizio<input name ="start_time" class="form-control input-element" type="datetime-local" required></label>
+                <label class="form-label form-entry">Istante di fine<input name ="end_time"  class="form-control input-element" type="datetime-local" required></label>
+                <input class="btn btn-primary" type="submit" value="Verifica">
+            </form>
+
+            </div>
+
+            <div id ="resultsDiv">
+
+                
+            </div>
+
+        </div>
+        
+    </section>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/setSLA.js')}}"></script>
+</body>
+
+</html>

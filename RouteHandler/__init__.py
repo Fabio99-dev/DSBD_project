@@ -19,7 +19,6 @@ import time
 mutex_db = threading.Lock()
 
 #Logger
-#logger = logging.Logger(level=logging.DEBUG, name="Vattela a pesca")
 logging.basicConfig(level=logging.DEBUG)
 
 class message:
@@ -47,8 +46,6 @@ class message:
       return self.__str__()
    
 
-
-
 def checkNullValues(data):
    
    for key, value in data.items():
@@ -68,9 +65,6 @@ def create_app():
    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
    app.secret_key ="my_secret"
-    #La durata di una sessione viene fissata a 15 minuti
-   #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza
-   #del database SQL 
 
    app.logger.debug("Application started. By logger")
    db = SQLAlchemy(app)
@@ -135,9 +129,17 @@ def create_app():
       
       def __repr__(self):
         return self.__str__()
-      
+
+   '''
+   Variabile condivisa tra il thread in background e il principale. 
+   Contiene il tempo di database da passare all'exporter.   
+   '''   
    queryTime = multiprocessing.Value('d', 0.0)
   
+
+   '''
+   Questo endpoint esposto per l'exporter delle metriche
+   '''
    @app.route("/route_handler_cpu_metrics", methods = ["GET"])
    def metrics():
       with queryTime.get_lock():
@@ -151,6 +153,10 @@ def create_app():
       return json.dumps(data)
 
 
+   '''
+   Questa è la funzione eseguita dal thread in background:
+   Scarica il contenuto del database e invia i messaggi kafka.
+   '''
    def queryDB(db, app, queryTime):
       
       with app.app_context(),mutex_db, queryTime.get_lock():
@@ -166,22 +172,18 @@ def create_app():
             #code to send the kafka message...
             producer.send("PingRoute", bytes(str(msg),'utf-8'))
             logging.debug("######## Ho inviato il messaggio Kafka ###########")
-            #-------
 
 
-  #NOTA BENE!!!! Il route handler NON deve eseguire in debug perchè altrimenti verranno creati due 
-            #Thread!!       
+   #NOTA BENE!!!! Il route handler NON deve eseguire in debug perchè altrimenti verranno creati due Thread!!       
 
-  #Istanzio un thread che si occupa ad intervalli regolari di effettuare query al db       
+   #Istanzio un background scheduler che si occupa ad intervalli regolari di schedulare un task che effettua query al db       
    scheduler = BackgroundScheduler()
    scheduler.add_job(queryDB, 'interval', minutes=1, args=[db, app, queryTime])   
    scheduler.start()
 
-   @app.route("/debugScheduler")
-   def debugScheduler():
-
-      return "<p>" + str(scheduler.get_jobs()) + "</p>"
-
+   '''
+   Questa route ritorna i dati di sottoscrizione di un utente
+   '''
    @app.route("/getData/<user_id>", methods = ["GET"])
    def getData(user_id):
       with mutex_db:
@@ -213,7 +215,10 @@ def create_app():
          routes.append(entry)
 
       return routes
-
+   
+   '''
+   Questa route cancella una sottoscrizione ed eventualmente anche la tratta se non è più sottoscritta da nessuno
+   '''
    @app.route("/deleteAlert/<alertID>/<routeID>", methods = ["GET"])
    def deleteAlert(alertID, routeID):
 
@@ -231,6 +236,10 @@ def create_app():
          
       return redirect("/myAlerts")
    
+
+   '''
+   Questa route ritorna i dati di una determinata sottoscrizione
+   '''
    @app.route("/getSubscriptionData/<alertID>", methods = ["GET"])
    def getSubscriptionData(alertID):
       
@@ -254,6 +263,9 @@ def create_app():
          }
       return json.dumps(data)
    
+   '''
+   Questa route effettua le modifiche della sottoscrizione e le salva sul database
+   '''
    @app.route("/changeAlert", methods = ["POST"])
    def changeAlert():
 
@@ -282,8 +294,9 @@ def create_app():
          return redirect("/privateArea")
 
       
-
-
+   '''
+   Questa route alla ricezione del form di sottoscrizione salva i dati nel database
+   '''
    @app.route("/sendData", methods = ["POST"])
    def sendData():
       if request.method != "POST":

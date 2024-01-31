@@ -14,16 +14,6 @@ import psutil
 import json
 
 
-def get_host_ip():
-    try:
-        # Ottieni l'hostname della macchina
-        host_name = socket.gethostname()
-        # Ottieni l'indirizzo IP associato all'hostname
-        host_ip = socket.gethostbyname(host_name)
-        return host_ip
-    except Exception as e:
-        print(f"Errore durante il recupero dell'indirizzo IP: {str(e)}")
-        return None
 
 def create_app():
 
@@ -34,7 +24,8 @@ def create_app():
    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
    app.permanent_session_lifetime = timedelta(minutes=30) 
    app.secret_key ="my_secret"
-    #La durata di una sessione viene fissata a 15 minuti
+   
+   #La durata di una sessione viene fissata a 30 minuti
    #Dopo aver recuperato dal file config le configurazioni del database, si ottiene l'istanza
    #del database SQL 
 
@@ -53,17 +44,6 @@ def create_app():
         self.nome = nome
         self.email = email
         self.password = password
-
-   #Setup della session    
-   """SESSION_COOKIE_NAME = "authorized"
-   PERMANENT_SESSION_LIFETIME = 180 #TEST. Sessione da 3 minuti
-   SESSION_PERMANENT = False
-   Session(app=app)  """ 
-
-   @app.route("/cookieDebug")
-   def cookieDebug():
-      session.pop("username", None)
-      return "Session status: " + str(session["authorized"])
    
    @app.route("/logout")
    def logout():
@@ -152,10 +132,6 @@ def create_app():
          data = False
          return render_template("register.html", data = data)
 
-   #FINALMENTE COSI' FUNZIONA
-   #DA FARE: GESTIRE CHE ALLA TERMINAZIONE DEL CONTAINER IL DATABASE FA IL DUMP
-   #E INDICARE CHE AL CARICAMENTO DEL CONTAINER CARICA IL DUMP PRECEDENTEMENTE FATTO
-   #https://www.youtube.com/watch?v=WBqHr2kPc_A usare questa fonte
    @app.route("/editAlert/<alertID>", methods = ["GET"])
    def editAlert(alertID):
       
