@@ -231,6 +231,7 @@ def create_app():
 
       for result in results:
 
+         result.attivata = False
          for slo in sla:
 
             if result.metrica == slo.nome:
