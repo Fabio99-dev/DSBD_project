@@ -106,7 +106,7 @@ if consumer.bootstrap_connected() == True:
                            
                            server.starttls()
                            server.login(email_address, password)
-                           #server.sendmail(sender_email, receiver_email, message.as_string())
+                           server.sendmail(sender_email, receiver_email, message.as_string())
                      else:
                         logging.debug("Email not found!")
 
